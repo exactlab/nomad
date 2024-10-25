@@ -48,6 +48,7 @@ dependencies = [
     'scikit-learn>=1.0.2',
     'scipy>=1.7.1',
     'toposort>=1.0',
+    'typing-extensions>=4.12',
     'kaleido==0.2.1',
     'wrapt>=1.12.1',
     'xarray>=0.20.2',
