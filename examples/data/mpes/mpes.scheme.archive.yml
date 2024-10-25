@@ -3,7 +3,7 @@ definitions:
   sections:
     MPES:
       base_sections:
-        - "pynxtools.nomad.dataconverter.ElnYamlConverter"
+        - "nomad.datamodel.metainfo.eln.ElnYamlConverter"
         - "nomad.datamodel.data.EntryData"
       m_annotations:
         template:

@@ -294,8 +294,10 @@ class Primitive(Datatype):
                     raise ValueError(
                         f'Cannot set {value} for the scalar quantity {self._definition}.'
                     )
-
-                value = value[0]
+                try:
+                    value = value[0]
+                except IndexError:
+                    value = value.min()
                 given_type = value.dtype.type
 
             # type match, no need to consider conversion

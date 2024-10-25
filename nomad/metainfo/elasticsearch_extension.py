@@ -1570,45 +1570,52 @@ def create_searchable_quantity(
         value = section.m_get(quantity_def)
         if value is None:
             return None
-        try:
-            value_field_name = get_searchable_quantity_value_field(annotation)
-            if value_field_name is None:
-                return None
-            if mapping == 'text':
-                value = str(value)
-            elif mapping == 'date':
-                value = value.isoformat()
-            elif mapping == 'long':
-                if isinstance(value, PintQuantity):
-                    value = int(value.m)
-                elif isinstance(value, dict):
-                    return None
-                else:
-                    value = int(value)
-            elif mapping == 'boolean':
-                value = bool(value)
-            elif mapping == 'double':
-                if isinstance(value, PintQuantity):
-                    value = float(value.m)
-                elif isinstance(value, dict):
-                    return None
-                else:
-                    value = float(value)
-                if not math.isfinite(value):
-                    logger.warn(
-                        'skipped indexing NaN value',
-                        path_archive=path_archive,
-                    )
-                    return None
-            setattr(searchable_quantity, value_field_name, value)
-        except Exception as e:
-            logger.error(
-                'error in indexing dynamic quantity',
-                path_archive=path_archive,
-                exc_info=e,
-            )
-            return None
 
+        def drop_value(value, annotation, searchable_quantity):
+            try:
+                value_field_name = get_searchable_quantity_value_field(annotation)
+                if value_field_name is None:
+                    return None
+                if mapping == 'text':
+                    value = str(value)
+                elif mapping == 'date':
+                    value = value.isoformat()
+                elif mapping == 'long':
+                    if isinstance(value, PintQuantity):
+                        value = int(value.m)
+                    elif isinstance(value, dict):
+                        return None
+                    else:
+                        value = int(value)
+                elif mapping == 'boolean':
+                    value = bool(value)
+                elif mapping == 'double':
+                    if isinstance(value, PintQuantity):
+                        value = float(value.m)
+                    elif isinstance(value, dict):
+                        return None
+                    else:
+                        value = float(value)
+                    if not math.isfinite(value):
+                        logger.warn(
+                            'skipped indexing NaN value',
+                            path_archive=path_archive,
+                        )
+                        return None
+                setattr(searchable_quantity, value_field_name, value)
+            except Exception as e:
+                logger.error(
+                    'error in indexing dynamic quantity',
+                    path_archive=path_archive,
+                    exc_info=e,
+                )
+                return None
+
+        if isinstance(value, dict):
+            for k in value:
+                drop_value(value[k].value, annotation, searchable_quantity)
+        else:
+            drop_value(value, annotation, searchable_quantity)
     return searchable_quantity
 
 

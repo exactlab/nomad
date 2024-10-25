@@ -404,7 +404,9 @@ def resolve_variadic_name(definitions: dict, name: str, hint: Optional[str] = No
             if hint and hint in definition.all_attributes:
                 hint_candidates[definition] = match_score
 
-    # Prioritize hint candidates if any
+    if len(candidates) == 0:
+        raise ValueError(f'Cannot find a proper definition for name "{name}".')
+
     if hint_candidates:
         return definitions[max(hint_candidates, key=hint_candidates.get)]
 
