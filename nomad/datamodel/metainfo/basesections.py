@@ -15,24 +15,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import os
-from typing import TYPE_CHECKING, Iterable
 import datetime
+import os
 import re
-from typing import (
-    Dict,
-    List,
-)
+from typing import TYPE_CHECKING, Dict, Iterable, List
 
-from unidecode import unidecode
-import numpy as np
 import h5py
-from ase.data import (
-    chemical_symbols,
-    atomic_numbers,
-    atomic_masses,
-)
+import numpy as np
 import requests
+from ase.data import atomic_masses, atomic_numbers, chemical_symbols
+from unidecode import unidecode
 
 from nomad.datamodel.metainfo.workflow import Link, Task, TaskReference, Workflow
 from nomad.metainfo.data_type import m_str
@@ -41,39 +33,17 @@ if TYPE_CHECKING:
     from structlog.stdlib import (
         BoundLogger,
     )
-from nomad.atomutils import (
-    Formula,
-)
-from nomad import (
-    utils,
-)
-from nomad.units import (
-    ureg,
-)
-from nomad.metainfo import (
-    Quantity,
-    Datetime,
-    Reference,
-    Section,
-    SubSection,
-)
-from nomad.metainfo.util import MEnum
-from nomad.datamodel.util import create_custom_mapping
-from nomad.datamodel.data import (
-    ArchiveSection,
-    EntryData,
-)
-from nomad.datamodel.results import (
-    Results,
-    ELN,
-    ElementalComposition as ResultsElementalComposition,
-    Material,
-)
-from nomad.datamodel.metainfo.annotations import (
-    ELNAnnotation,
-    HDF5Annotation,
-)
 
+from nomad import utils
+from nomad.atomutils import Formula
+from nomad.datamodel.data import ArchiveSection, EntryData
+from nomad.datamodel.metainfo.annotations import ELNAnnotation, HDF5Annotation
+from nomad.datamodel.results import ELN, Material, Results
+from nomad.datamodel.results import ElementalComposition as ResultsElementalComposition
+from nomad.datamodel.util import create_custom_mapping
+from nomad.metainfo import Datetime, Quantity, Reference, Section, SubSection
+from nomad.metainfo.util import MEnum
+from nomad.units import ureg
 
 PUB_CHEM_PUG_PATH = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound'
 CAS_API_PATH = 'https://commonchemistry.cas.org/api'
@@ -280,14 +250,21 @@ class BaseSection(ArchiveSection):
             if archive.results.eln.descriptions is None:
                 archive.results.eln.descriptions = []
             archive.results.eln.descriptions.append(self.description)
-
-        if getattr(self, 'tags', None):
+        # It is not good practice searching for a attributes which is not defined in datamodel
+        try:
+            tags_attr = getattr(self, 'tags', None)
+        except Exception as e:
+            tags_attr = None
+        if tags_attr:
             if archive.results.eln.tags is None:
                 archive.results.eln.tags = []
+
             tags = self.tags
             if isinstance(tags, list):
-                archive.results.eln.tags.extend(tags)
-            else:
+                for tag in tags:
+                    if isinstance(tag, str):
+                        archive.results.eln.tags.append(tag)
+            elif isinstance(tags, str):
                 archive.results.eln.tags.append(tags)
 
         if not archive.results.eln.sections:
@@ -457,7 +434,7 @@ class EntityReference(SectionReference):
         """
         super(EntityReference, self).normalize(archive, logger)
         if self.reference is None and self.lab_id is not None:
-            from nomad.search import search, MetadataPagination
+            from nomad.search import MetadataPagination, search
 
             query = {'results.eln.lab_ids': self.lab_id}
             search_result = search(
@@ -522,7 +499,7 @@ class ExperimentStep(ActivityStep):
         """
         super(ExperimentStep, self).normalize(archive, logger)
         if self.activity is None and self.lab_id is not None:
-            from nomad.search import search, MetadataPagination
+            from nomad.search import MetadataPagination, search
 
             query = {'results.eln.lab_ids': self.lab_id}
             search_result = search(
@@ -1573,7 +1550,7 @@ class PubChemPureSubstanceSection(PureSubstanceSection):
         try:
             cids = response.json()['IdentifierList']['CID']
         except KeyError:
-            logger.warn(f'CID search request to PubChem response missing CID list.')
+            logger.warn('CID search request to PubChem response missing CID list.')
             return False
         if len(cids) == 0:
             return False
@@ -1804,7 +1781,7 @@ class CASPureSubstanceSection(PureSubstanceSection):
         elif response.status_code == 404:
             logger.warn(f'No CAS entry found with CAS number: {self.cas_number}')
         elif response.status_code >= 500:
-            logger.warn(f'Remote server error on CAS API call.')
+            logger.warn('Remote server error on CAS API call.')
         else:
             logger.warn(
                 f'Unexpected response code: {response.status_code} from CAS API call.'
@@ -2107,9 +2084,9 @@ class PublicationReference(ArchiveSection):
             logger ('BoundLogger'): A structlog logger.
         """
         super(PublicationReference, self).normalize(archive, logger)
-        from nomad.datamodel.datamodel import EntryMetadata
         import dateutil.parser
         import requests
+        from nomad.datamodel.datamodel import EntryMetadata
 
         # Parse journal name, lead author and publication date from crossref
         if self.DOI_number:
