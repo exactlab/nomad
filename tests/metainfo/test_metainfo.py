@@ -36,12 +36,14 @@ from nomad.metainfo.metainfo import (
     DeriveError,
     MetainfoError,
     Environment,
-    Annotation,
-    AnnotationModel,
-    SectionAnnotation,
     Context,
-    DefinitionAnnotation,
     derived,
+)
+from nomad.metainfo import (
+    Annotation,
+    DefinitionAnnotation,
+    SectionAnnotation,
+    AnnotationModel,
 )
 from nomad.metainfo.example import (
     Run,

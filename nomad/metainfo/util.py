@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import hashlib
 import re
-from difflib import SequenceMatcher
 from typing import Any, Optional
 
 import pint
@@ -205,37 +204,6 @@ class MSubSectionList(list):
         return False
 
 
-class Annotation:
-    """Base class for annotations."""
-
-    def m_to_dict(self):
-        """
-        Returns a JSON serializable representation that is used for exporting the
-        annotation to JSON.
-        """
-        return str(self.__class__.__name__)
-
-
-class DefinitionAnnotation(Annotation):
-    """Base class for annotations for definitions."""
-
-    def __init__(self):
-        self.definition = None
-
-    def init_annotation(self, definition):
-        self.definition = definition
-
-
-class SectionAnnotation(DefinitionAnnotation):
-    """
-    Special annotation class for section definition that allows to auto add annotations
-    to section instances.
-    """
-
-    def new(self, section) -> dict[str, Any]:
-        return {}
-
-
 def to_dict(entries):
     if isinstance(entries, list):
         return [to_dict(entry) for entry in entries]
@@ -386,9 +354,6 @@ def resolve_variadic_name(definitions: dict, name: str, hint: Optional[str] = No
     Raises:
         ValueError: If the definitions dictionary is empty or if no proper definition can be found for the given name.
     """
-    if len(definitions) == 0:
-        raise ValueError('The definitions dictionary cannot be empty.')
-
     # Check for an exact name match
     if name in definitions:
         return definitions[name]

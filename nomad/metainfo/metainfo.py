@@ -32,7 +32,6 @@ from typing import (
     Callable as TypingCallable,
     TypeVar,
     cast,
-    ClassVar,
     Literal,
 )
 from urllib.parse import urlsplit, urlunsplit
@@ -40,7 +39,7 @@ from urllib.parse import urlsplit, urlunsplit
 import docstring_parser
 import jmespath
 import pint
-from pydantic import parse_obj_as, ValidationError, BaseModel, Field
+from pydantic import parse_obj_as, ValidationError
 from typing_extensions import deprecated  # type: ignore
 
 from nomad.config import config
@@ -66,17 +65,20 @@ from nomad.metainfo.data_type import (
     InexactNumber,
 )
 from nomad.metainfo.util import (
-    Annotation,
-    DefinitionAnnotation,
     MQuantity,
     MSubSectionList,
-    SectionAnnotation,
     convert_to,
     default_hash,
     dict_to_named_list,
     resolve_variadic_name,
     split_python_definition,
     to_dict,
+)
+from .annotation import (
+    Annotation,
+    DefinitionAnnotation,
+    SectionAnnotation,
+    AnnotationModel,
 )
 from nomad.units import ureg as units
 
@@ -4580,37 +4582,5 @@ class Environment(MSection):
         raise KeyError(f'Could not resolve {name}')
 
 
-class AnnotationModel(Annotation, BaseModel):
-    """
-    Base class for defining annotation models. Annotations used with simple dict-based
-    values, can be validated by defining and registering a formal pydantic-based
-    model.
-    """
-
-    m_definition: Definition = Field(
-        None, description='The definition that this annotation is annotating.'
-    )
-
-    m_error: str = Field(None, description='Holds a potential validation error.')
-
-    m_registry: ClassVar[dict[str, type[AnnotationModel]]] = {}
-    """ A static member that holds all currently known annotations with pydantic model. """
-
-    def m_to_dict(self, *args, **kwargs):
-        return self.dict(exclude_unset=True)
-
-    class Config:
-        fields = {
-            'm_definition': {
-                'exclude': True,
-            },
-            'm_error': {'exclude': True},
-        }
-
-        validate_assignment = True
-        arbitrary_types_allowed = True
-        use_enum_values = True
-
-
-AnnotationModel.update_forward_refs()
+AnnotationModel.update_forward_refs(**locals())
 SchemaPackage = Package
