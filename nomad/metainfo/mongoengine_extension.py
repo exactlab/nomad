@@ -37,12 +37,10 @@ from typing import Any, Dict, List
 
 from .data_type import Datatype, to_mongo_type
 from .metainfo import (
-    DefinitionAnnotation,
-    SectionAnnotation,
-    Annotation,
     MSection,
     Quantity,
 )
+from . import Annotation, DefinitionAnnotation, SectionAnnotation
 
 
 class Mongo(DefinitionAnnotation):

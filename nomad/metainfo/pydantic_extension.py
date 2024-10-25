@@ -37,11 +37,11 @@ from pydantic import create_model, Field, BaseConfig, BaseModel
 
 from .data_type import to_pydantic_type
 from .metainfo import (
-    DefinitionAnnotation,
     Definition,
     Section,
     Quantity,
 )
+from . import DefinitionAnnotation
 
 
 class _OrmConfig(BaseConfig):

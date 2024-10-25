@@ -185,11 +185,11 @@ from .metainfo import (
     Quantity,
     MSection,
     Reference,
-    DefinitionAnnotation,
     Definition,
     QuantityReference,
     Package,
 )
+from . import DefinitionAnnotation
 
 from typing import TYPE_CHECKING
 

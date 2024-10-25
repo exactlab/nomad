@@ -63,12 +63,14 @@ from .metainfo import (
     HDF5Reference,
     Context,
     m_package,
-    Annotation,
-    AnnotationModel,
-    DefinitionAnnotation,
-    SectionAnnotation,
     SectionProxy,
     derived,
     constraint,
     units,
+)
+from .annotation import (
+    Annotation,
+    DefinitionAnnotation,
+    SectionAnnotation,
+    AnnotationModel,
 )
