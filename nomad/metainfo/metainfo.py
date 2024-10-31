@@ -1520,7 +1520,10 @@ class MSection(metaclass=MObjectMeta):
                 The hint is the name of one of the attributes defined in the target quantity.
                 This will be used to help identify which quantity to check.
         """
-        definition = self._ensure_definition(def_or_name, hint=hint)
+        try:
+            definition = self._ensure_definition(def_or_name, hint=hint)
+        except (ValueError, MetainfoError):
+            return False
 
         # derived quantity is always set
         if isinstance(definition, Quantity) and definition.derived is not None:
