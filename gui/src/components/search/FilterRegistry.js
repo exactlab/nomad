@@ -263,10 +263,10 @@ registerFilter('results.method.simulation.program_name', {...termQuantity, scale
 registerFilter('results.method.simulation.program_version', termQuantity)
 registerFilter('results.method.simulation.program_version_internal', termQuantity)
 registerFilter('results.method.simulation.precision.native_tier', {...termQuantity, placeholder: "E.g. VASP - accurate", label: 'Code-specific tier'})
-registerFilter('results.method.simulation.precision.k_line_density', {...numberHistogramQuantity, scale: 'log', label: 'k-line density'})
+registerFilter('results.method.simulation.precision.k_line_density', {...numberHistogramQuantity, scale: '1/2', label: 'k-line density'})
 registerFilter('results.method.simulation.precision.basis_set', {...termQuantity, scale: 'log'})
-registerFilter('results.method.simulation.precision.planewave_cutoff', {...numberHistogramQuantity, label: 'Plane-wave cutoff', scale: 'log'})
-registerFilter('results.method.simulation.precision.apw_cutoff', {...numberHistogramQuantity, label: 'APW cutoff', scale: 'log'})
+registerFilter('results.method.simulation.precision.planewave_cutoff', {...numberHistogramQuantity, label: 'Plane-wave cutoff', scale: '1/8'})
+registerFilter('results.method.simulation.precision.apw_cutoff', {...numberHistogramQuantity, label: 'APW cutoff', scale: '1/8'})
 registerFilter('results.method.simulation.dft.core_electron_treatment', termQuantity)
 registerFilter('results.method.simulation.dft.jacobs_ladder', {...termQuantity, scale: 'log', label: 'Jacob\'s ladder'})
 registerFilter('results.method.simulation.dft.xc_functional_type', {
