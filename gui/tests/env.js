@@ -1443,6 +1443,22 @@ window.nomadEnv = {
                 "indentation": 1,
                 "items": [
                   {
+                    "search_quantity": "results.method.workflow_name",
+                    "type": "terms",
+                    "scale": "linear",
+                    "show_input": false,
+                    "width": 12,
+                    "show_header": false,
+                    "options": {
+                      "MolecularDynamics": {
+                        "label": "Search molecular dynamics entries"
+                      }
+                    },
+                    "n_columns": 1,
+                    "sort_static": true,
+                    "show_statistics": false
+                  },
+                  {
                     "width": 12,
                     "show_header": true,
                     "type": "nested_object",
@@ -3276,6 +3292,22 @@ window.nomadEnv = {
                 "indentation": 1,
                 "items": [
                   {
+                    "search_quantity": "results.method.workflow_name",
+                    "type": "terms",
+                    "scale": "linear",
+                    "show_input": false,
+                    "width": 12,
+                    "show_header": false,
+                    "options": {
+                      "MolecularDynamics": {
+                        "label": "Search molecular dynamics entries"
+                      }
+                    },
+                    "n_columns": 1,
+                    "sort_static": true,
+                    "show_statistics": false
+                  },
+                  {
                     "width": 12,
                     "show_header": true,
                     "type": "nested_object",
@@ -4788,6 +4820,22 @@ window.nomadEnv = {
                 "size": "md",
                 "indentation": 1,
                 "items": [
+                  {
+                    "search_quantity": "results.method.workflow_name",
+                    "type": "terms",
+                    "scale": "linear",
+                    "show_input": false,
+                    "width": 12,
+                    "show_header": false,
+                    "options": {
+                      "MolecularDynamics": {
+                        "label": "Search molecular dynamics entries"
+                      }
+                    },
+                    "n_columns": 1,
+                    "sort_static": true,
+                    "show_statistics": false
+                  },
                   {
                     "width": 12,
                     "show_header": true,

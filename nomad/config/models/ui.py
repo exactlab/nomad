@@ -1466,6 +1466,17 @@ class App(ConfigBaseModel):
                     'workflow': Menu(),
                     'molecular_dynamics': Menu(
                         items=[
+                            MenuItemTerms(
+                                search_quantity='results.method.workflow_name',
+                                show_header=False,
+                                show_input=False,
+                                show_statistics=False,
+                                options={
+                                    'MolecularDynamics': MenuItemOption(
+                                        label='Search molecular dynamics entries'
+                                    )
+                                },
+                            ),
                             MenuItemNestedObject(
                                 path='results.properties.thermodynamic.trajectory',
                                 items=[
