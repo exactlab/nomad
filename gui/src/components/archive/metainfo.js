@@ -826,9 +826,14 @@ export function getMetainfoFromDefinition(definition) {
  * @param {str} path The archive path to the section
  * @param {function} callback The callback that is called on each section
  */
-export function traverse(section, definition, path, callback) {
+export async function traverse(section, definition, path, callback) {
   callback(section, definition, path)
+
+  // Loop through all subsection definitions
   for (const subSectionDef of definition._allProperties.filter(prop => prop.m_def === SubSectionMDef)) {
+    let sectionDef = subSectionDef.sub_section
+
+    // Find all subsection instances
     let subSections = []
     if (!subSectionDef.repeats) {
       const subSection = section[subSectionDef.name]
@@ -839,13 +844,25 @@ export function traverse(section, definition, path, callback) {
       subSections = section[subSectionDef.name] || []
     }
 
-    subSections.forEach((subSection, index) => {
+    // For each found instance, check for m_def definition override in the data
+    // and trigger the recursion.
+    let index = 0
+    for (const subSection of subSections) {
       let childPath = `${path}/${subSectionDef.name}`
       if (subSectionDef.repeats) {
         childPath = `${childPath}/${index}`
       }
-      traverse(subSection, subSectionDef.sub_section, childPath, callback)
-    })
+      // Here the final definition is resolved based on the presence of an
+      // m_def. TODO: m_defs that point to a definition that is not within the
+      // same metainfo that the original definition came from are not here
+      // properly resolved.
+      if (subSection.m_def && !subSection.m_def.startsWith('../upload/')) {
+        const metainfo = getMetainfoFromDefinition(definition)
+        sectionDef = await metainfo.resolveDefinition(subSection.m_def)
+      }
+      await traverse(subSection, sectionDef, childPath, callback)
+      ++index
+    }
   }
 }
 

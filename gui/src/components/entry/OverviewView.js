@@ -169,7 +169,7 @@ const OverviewView = React.memo(() => {
     }
     const getSections = async () => {
       const sections = []
-      traverse(archive.data, dataMetainfoDef, 'data', (section, sectionDef, path) => {
+      await traverse(archive.data, dataMetainfoDef, 'data', (section, sectionDef, path) => {
         if (path === 'data' || sectionDef.m_annotations?.eln?.[0]?.overview) {
           sections.push({
             archivePath: path,

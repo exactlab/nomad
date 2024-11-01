@@ -98,8 +98,8 @@ export async function getSectionsInfo(api, dataStore, reference, entry_id) {
       const url = dataArchive.metadata.upload_id ? `${apiBase}/uploads/${dataArchive.metadata.upload_id}/archive/${entry_id}` : undefined
       const dataMetainfoDefUrl = resolveNomadUrlNoThrow(m_def, url)
       const sectionDef = await dataStore.getMetainfoDefAsync(dataMetainfoDefUrl)
-      traverse(dataArchive[section], sectionDef, section, (section, sectionDef, path) => {
-        const ref = reference && [...reference][0]
+      const ref = reference && [...reference][0]
+      await traverse(dataArchive[section], sectionDef, section, (section, sectionDef, path) => {
         if (ref &&
           (sectionDef._qualifiedName === ref || sectionDef._allBaseSections?.map(section => section._qualifiedName).includes(ref))) {
           const itemLabelKey = getItemLabelKey(sectionDef)
@@ -109,8 +109,7 @@ export async function getSectionsInfo(api, dataStore, reference, entry_id) {
       })
     }
   }
-  const references = referencedSubSections || []
-  return references.map(reference => {
+  return (referencedSubSections || []).map(reference => {
     const fullPath = reference?.path && reference.path !== '/data' && reference.path !== 'data' ? `${dataArchive?.metadata?.mainfile}#${reference.path}` : dataArchive?.metadata?.mainfile
     return {
       label: reference.name ? `${reference.name} (./${reference?.path})` : `./${reference?.path}`,
