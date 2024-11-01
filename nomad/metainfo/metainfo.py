@@ -1523,7 +1523,10 @@ class MSection(metaclass=MObjectMeta):
         try:
             definition = self._ensure_definition(def_or_name, hint=hint)
         except (ValueError, MetainfoError):
-            return False
+            raise MetainfoError(
+                f'{def_or_name} is not found in the definition of {self},'
+                ' are you calling this method on the correct object?'
+            )
 
         # derived quantity is always set
         if isinstance(definition, Quantity) and definition.derived is not None:
