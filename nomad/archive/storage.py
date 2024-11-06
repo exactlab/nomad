@@ -21,8 +21,9 @@ from typing import Any, Tuple, Dict, Union, cast, Generator
 from io import BytesIO, BufferedReader
 from collections.abc import Mapping, Sequence
 
-import msgpack
 import struct
+
+import msgspec
 
 from nomad import utils
 from nomad.config import config
@@ -34,7 +35,7 @@ _bytes_per_block = _entries_per_block * _toc_item_size
 
 
 def unpackb(o):
-    return msgpack.unpackb(o, raw=False)
+    return msgspec.msgpack.decode(o)
 
 
 def _decode(position: bytes) -> Tuple[int, int]:
