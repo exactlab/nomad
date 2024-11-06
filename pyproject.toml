@@ -64,7 +64,6 @@ repository = 'https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR'
 parsing = [
     'h5py==3.11.0',
     'netCDF4==1.6.5',
-    'nomad-openbis>=1.0',
     'rdkit==2023.9.5',
     'python-magic-bin >= 0.4; sys_platform == "win32"',
 ]

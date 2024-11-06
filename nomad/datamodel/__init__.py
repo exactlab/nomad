@@ -77,6 +77,11 @@ def all_metainfo_packages():
 
     import_all_parsers()
 
+    # We need to manually import this module to get some definitions that the
+    # tests need. TODO: Are these definitions used by anything else besides the
+    # tests?
+    import nomad.datamodel.metainfo.eln
+
     # Create the ES mapping to populate ES annotations with search keys.
     from nomad.search import entry_type
 

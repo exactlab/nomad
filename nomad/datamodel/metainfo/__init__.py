@@ -26,8 +26,6 @@ from . import (
 )  # Should be imported first to register the annotations before they are used
 from .simulation import m_env
 from .downloads import m_package
-from .eln.labfolder import m_package
-from .eln.openbis import m_package
 from .plot import m_package
 
 

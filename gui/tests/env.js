@@ -7936,6 +7936,66 @@ window.nomadEnv = {
           "description": "Describes the basic schemas for AI Toolkit notebooks.",
           "plugin_package": "nomad_aitoolkit"
         },
+        "nomad_external_eln_integrations.example_uploads:elabftwexample": {
+          "id": "nomad_external_eln_integrations.example_uploads:elabftwexample",
+          "entry_point_type": "example_upload",
+          "description": "Thi example contains an ELabFTW Experiment exported into .ELN file format.",
+          "plugin_package": "nomad_external_eln_integrations",
+          "category": "Examples",
+          "title": "ELN File Format Example",
+          "path": "example_uploads/files"
+        },
+        "nomad_external_eln_integrations.parsers:chemotion_parser_entry_point": {
+          "id": "nomad_external_eln_integrations.parsers:chemotion_parser_entry_point",
+          "entry_point_type": "parser",
+          "name": "parsers/chemotion",
+          "description": "NOMAD parser for chemotion data.",
+          "plugin_package": "nomad_external_eln_integrations",
+          "level": 0,
+          "aliases": [
+            "parsers/chemotion"
+          ],
+          "mainfile_name_re": "^.*export.json$",
+          "mainfile_mime_re": "application/json|text/plain",
+          "mainfile_alternative": false,
+          "supported_compressions": []
+        },
+        "nomad_external_eln_integrations.parsers:elabftw_parser_entry_point": {
+          "id": "nomad_external_eln_integrations.parsers:elabftw_parser_entry_point",
+          "entry_point_type": "parser",
+          "name": "parsers/elabftw",
+          "description": "NOMAD parser for eln file formats.",
+          "plugin_package": "nomad_external_eln_integrations",
+          "level": 0,
+          "aliases": [
+            "parsers/elabftw"
+          ],
+          "mainfile_name_re": ".*ro-crate-metadata.json$",
+          "mainfile_mime_re": "text/plain|application/json|text/html",
+          "mainfile_alternative": false,
+          "supported_compressions": []
+        },
+        "nomad_external_eln_integrations.schema_packages.elabftw:elabftw_schema": {
+          "id": "nomad_external_eln_integrations.schema_packages.elabftw:elabftw_schema",
+          "entry_point_type": "schema_package",
+          "name": "elabftw",
+          "description": "NOMAD integration for mapping elabftw data to NOMAD schema",
+          "plugin_package": "nomad_external_eln_integrations"
+        },
+        "nomad_external_eln_integrations.schema_packages.labfolder:labfolder_schema": {
+          "id": "nomad_external_eln_integrations.schema_packages.labfolder:labfolder_schema",
+          "entry_point_type": "schema_package",
+          "name": "labfolder",
+          "description": "NOMAD integration for mapping Labfolder data to NOMAD schema",
+          "plugin_package": "nomad_external_eln_integrations"
+        },
+        "nomad_external_eln_integrations.schema_packages.openbis:openbis_schema": {
+          "id": "nomad_external_eln_integrations.schema_packages.openbis:openbis_schema",
+          "entry_point_type": "schema_package",
+          "name": "openbis",
+          "description": "NOMAD integration for mapping Openbis data to NOMAD schema",
+          "plugin_package": "nomad_external_eln_integrations"
+        },
         "nomad_porous_materials.apps:mofapp": {
           "id": "nomad_porous_materials.apps:mofapp",
           "entry_point_type": "app",
@@ -8848,17 +8908,6 @@ window.nomadEnv = {
           "name": "NOMADSimulations",
           "description": "A NOMAD plugin for FAIR schemas for simulation data.",
           "plugin_package": "nomad_simulations"
-        },
-        "parsers/chemotion/chemotion": {
-          "plugin_type": "parser",
-          "id": "parsers/chemotion/chemotion",
-          "name": "parsers/chemotion"
-        },
-        "parsers/elabftw/elabftw": {
-          "plugin_type": "parser",
-          "id": "parsers/elabftw/elabftw",
-          "name": "parsers/elabftw",
-          "plugin_source_code_url": "https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/tree/develop/nomad/parsing/elabftw"
         },
         "perovskite_solar_cell_database.apps:solar_cells": {
           "id": "perovskite_solar_cell_database.apps:solar_cells",
@@ -10697,6 +10746,22 @@ window.nomadEnv = {
         "name": "nomad_aitoolkit",
         "repository": "https://github.com/FAIRmat-NFDI/nomad-aitoolkit",
         "version": "0.1.1"
+      },
+      "nomad_external_eln_integrations": {
+        "description": "3rd Party Integration packages",
+        "documentation": null,
+        "entry_points": [
+          "nomad_external_eln_integrations.parsers:chemotion_parser_entry_point",
+          "nomad_external_eln_integrations.example_uploads:elabftwexample",
+          "nomad_external_eln_integrations.parsers:elabftw_parser_entry_point",
+          "nomad_external_eln_integrations.schema_packages.elabftw:elabftw_schema",
+          "nomad_external_eln_integrations.schema_packages.labfolder:labfolder_schema",
+          "nomad_external_eln_integrations.schema_packages.openbis:openbis_schema"
+        ],
+        "homepage": null,
+        "name": "nomad_external_eln_integrations",
+        "repository": "https://github.com/FAIRmat-NFDI/nomad-external-eln-integrations",
+        "version": "0.1.0"
       },
       "nomad_porous_materials": {
         "description": "NOMAD plugin for porous materials",
