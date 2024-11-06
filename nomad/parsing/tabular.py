@@ -889,8 +889,30 @@ def read_table_data(
     sep: str = None,
     skiprows: Union[list[int], int] = None,
     separator: str = None,
+    filters: dict = None,
 ):
     import pandas as pd
+
+    def filter_columns(df: pd.DataFrame, filters: Union[None, dict]) -> pd.DataFrame:
+        if not filters:
+            return df
+
+        if '__has_key' in filters:
+            column_name = filters['__has_key']
+            if column_name in df.columns:
+                return df[[column_name]]
+
+        if '__has_all_keys' in filters:
+            columns = [col for col in filters['__has_all_keys'] if col in df.columns]
+            if len(columns) == len(filters['__has_all_keys']):
+                return df[columns]
+
+        if '__has_only_keys' in filters:
+            columns = [col for col in filters['__has_only_keys'] if col in df.columns]
+            if set(columns) == set(filters['__has_only_keys']):
+                return df[columns]
+
+        return df
 
     if file_or_path is None:
         file_or_path = path
@@ -901,31 +923,31 @@ def read_table_data(
         )
         data = {
             0: {
-                sheet: pd.read_excel(
-                    excel_file,
-                    skiprows=skiprows,
-                    sheet_name=sheet,
-                    comment=comment,
+                sheet: filter_columns(
+                    pd.read_excel(
+                        excel_file,
+                        skiprows=skiprows,
+                        sheet_name=sheet,
+                        comment=comment,
+                    ),
+                    filters,
                 ).to_dict()
                 for sheet in excel_file.sheet_names
             }
         }
     else:
-        data = {
-            0: {
-                0: pd.read_csv(
-                    file_or_path,
-                    engine='python',
-                    comment=comment,
-                    sep=sep if sep else separator,
-                    skiprows=skiprows,
-                    skipinitialspace=True,
-                ).to_dict()
-            }
-        }
+        df = pd.read_csv(
+            file_or_path,
+            engine='python',
+            comment=comment,
+            sep=sep if sep else separator,
+            skiprows=skiprows,
+            skipinitialspace=True,
+        )
+        df = filter_columns(df, filters)
+        data = {0: {0: df.to_dict()}}
 
-    df = pd.DataFrame(data)
-    return df
+    return pd.DataFrame(data)
 
 
 class TabularDataParser(MatchingParser):

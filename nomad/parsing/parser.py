@@ -361,14 +361,20 @@ class MatchingParser(Parser):
                 from nomad.parsing.tabular import read_table_data
 
                 try:
-                    comment = self._mainfile_contents_dict.get('__comment_symbol', None)
-                    tmp = self._mainfile_contents_dict.pop('__comment_symbol', None)
-                    table_data = read_table_data(filename, comment=comment)[0]
-                    data = table_data.to_dict()
+                    comment = self._mainfile_contents_dict.get('__has_comment', None)
+                    tmp = self._mainfile_contents_dict.pop('__has_comment', None)
+                    table_data = read_table_data(
+                        filename, comment=comment, filters=self._mainfile_contents_dict
+                    )[0]
+                    data = (
+                        table_data[0]
+                        if filename.endswith('csv')
+                        else table_data.to_dict()
+                    )
 
                     is_match = match(self._mainfile_contents_dict, data)
                     if tmp:
-                        self._mainfile_contents_dict.update({'__comment_symbol': tmp})
+                        self._mainfile_contents_dict.update({'__has_comment': tmp})
                 except Exception:
                     pass
             if not is_match:
