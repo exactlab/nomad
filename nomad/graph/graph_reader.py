@@ -64,7 +64,10 @@ from nomad.graph.model import (
     EntryQuery,
     MetainfoQuery,
     MetainfoPagination,
+    UserGroupQuery,
+    UserGroupPagination,
 )
+from nomad.groups import UserGroup
 from nomad.metainfo import (
     SubSection,
     QuantityReference,
@@ -101,6 +104,8 @@ class Token:
     USERS = 'users'
     DATASET = 'dataset'
     DATASETS = 'm_datasets'
+    GROUP = 'group'
+    GROUPS = 'groups'
     METAINFO = 'metainfo'
     SEARCH = 'search'
     ERROR = 'm_errors'
@@ -118,6 +123,14 @@ class QueryError:
 
 
 def dataset_to_pydantic(item):
+    """
+    Do NOT optimise this function.
+    Function names are used to determine the type of the object.
+    """
+    return item.to_json()
+
+
+def group_to_pydantic(item):
     """
     Do NOT optimise this function.
     Function names are used to determine the type of the object.
@@ -571,6 +584,9 @@ def _normalise_required(
 
     if name in GeneralReader.__USER_ID__ or name == Token.USER or name == Token.USERS:
         reader_type = UserReader
+    elif name == Token.GROUP or name == Token.GROUPS:
+        reader_type = UserGroupReader
+        can_query = True
     elif name in GeneralReader.__UPLOAD_ID__:
         reader_type = UploadReader
     elif name == Token.UPLOAD or name == Token.UPLOADS:
@@ -748,6 +764,8 @@ class GeneralReader:
         'writers',
         'entry_coauthors',
         'user_id',
+        'owner',  # from UserGroup
+        'members',  # from UserGroup
     }
     # controls the names of fields that are treated as entry id, for those fields,
     # implicit resolve is supported and explicit resolve does not require an explicit resolve type
@@ -893,6 +911,45 @@ class GeneralReader:
             return user_id
 
         return user.m_to_dict(with_out_meta=True, include_derived=True)
+
+    async def _overwrite_group(self, item: UserGroup):
+        # todo: this is a quick dirty fix to convert the group object to a dictionary
+        # todo: it shall be formalised in the future
+        group_dict = item.to_mongo().to_dict()
+        group_dict['group_id'] = group_dict.pop('_id', None)
+
+        # to be consistent with the other parts
+        # all user ids are resolved to user objects
+        group_dict['owner'] = await self.retrieve_user(group_dict['owner'])
+        group_dict['members'] = [
+            await self.retrieve_user(member) for member in group_dict['members']
+        ]
+
+        return group_dict
+
+    async def retrieve_group(self, group_id: str) -> str | dict:
+        """
+        Retrieve the group for the given group id.
+        Returns a plain dictionary if the group is found, otherwise return the given group id.
+        """
+
+        def _retrieve():
+            return UserGroup.objects(group_id=group_id).first()
+
+        try:
+            group: UserGroup = await asyncio.to_thread(_retrieve)
+        except Exception as e:
+            self._log(str(e), to_response=False)
+            return group_id
+
+        if group is None:
+            self._log(
+                f'The value {group_id} is not a valid group id.',
+                error_type=QueryError.NOTFOUND,
+            )
+            return group_id
+
+        return await self._overwrite_group(group)
 
     async def _overwrite_upload(self, item: Upload):
         plain_dict = orjson.loads(upload_to_pydantic(item).json())
@@ -1306,6 +1363,25 @@ class MongoReader(GeneralReader):
 
         return config.query.dict(exclude_unset=True), self.datasets.filter(mongo_query)
 
+    async def _query_groups(self, config: RequestConfig):
+        # todo: extend and refine the query
+        if config.query:
+            assert isinstance(config.query, UserGroupQuery)
+            default_query = config.query
+        else:
+            default_query = UserGroupQuery(user_id=self.user.user_id)
+
+        # replace shortcut for myself
+        if default_query.user_id in ('me', None):
+            default_query.user_id = self.user.user_id
+
+        mongo_query = Q()
+        if default_query.user_id:
+            mongo_query &= Q(members=default_query.user_id)
+
+        # todo: maybe it is necessary to further refine the scope based on current user's visibility
+        return default_query.dict(exclude_unset=True), UserGroup.objects(mongo_query)
+
     async def _normalise(
         self, mongo_result, config: RequestConfig, transformer: Callable
     ) -> tuple[dict, PaginationResponse | None]:
@@ -1345,6 +1421,8 @@ class MongoReader(GeneralReader):
                     return _item.dataset_id
                 if transformer == entry_to_pydantic:
                     return _item.entry_id
+                if transformer == group_to_pydantic:
+                    return _item.group_id
 
                 raise ValueError(f'Should not reach here.')
 
@@ -1369,6 +1447,11 @@ class MongoReader(GeneralReader):
             mongo_dict = {
                 v['entry_id']: v
                 for v in [self._overwrite_entry(item) for item in mongo_result]
+            }
+        elif transformer == group_to_pydantic:
+            mongo_dict = {
+                v['group_id']: v
+                for v in [await self._overwrite_group(item) for item in mongo_result]
             }
         else:
             raise ValueError(f'Should not reach here.')
@@ -1654,6 +1737,9 @@ class MongoReader(GeneralReader):
             return True
         if key == Token.DATASET or key == Token.DATASETS:
             await offload_func(await self._query_datasets(config), dataset_to_pydantic)
+            return True
+        if key == Token.GROUP or key == Token.GROUPS:
+            await offload_func(await self._query_groups(config), group_to_pydantic)
             return True
         if key == Token.USER or key == Token.USERS:
             await offload_func(
@@ -1988,42 +2074,50 @@ class UserReader(MongoReader):
         if user_id == 'me':
             user_id = self.user.user_id
 
-        mongo_query = (
-            Q(main_author=user_id) | Q(reviewers=user_id) | Q(coauthors=user_id)
-        )
-        # self.user must have access to the upload
-        if user_id != self.user.user_id and not self.user.is_admin:
-            mongo_query &= (
-                Q(main_author=self.user.user_id)
-                | Q(reviewers=self.user.user_id)
-                | Q(coauthors=self.user.user_id)
+        if isinstance(target_user := await self.retrieve_user(user_id), str):
+            # does not exist
+            self._log(
+                f'User ID {user_id} does not exist.', error_type=QueryError.NOTFOUND
+            )
+        else:
+            mongo_query = (
+                Q(main_author=user_id) | Q(reviewers=user_id) | Q(coauthors=user_id)
+            )
+            # self.user must have access to the upload
+            if user_id != self.user.user_id and not self.user.is_admin:
+                mongo_query &= (
+                    Q(main_author=self.user.user_id)
+                    | Q(reviewers=self.user.user_id)
+                    | Q(coauthors=self.user.user_id)
+                )
+
+            self.uploads = Upload.objects(mongo_query)
+            self.entries = Entry.objects(
+                upload_id__in=[v.upload_id for v in self.uploads]
+            )
+            self.datasets = Dataset.m_def.a_mongo.objects(
+                dataset_id__in=set(
+                    v for e in self.entries if e.datasets for v in e.datasets
+                )
             )
 
-        self.uploads = Upload.objects(mongo_query)
-        self.entries = Entry.objects(upload_id__in=[v.upload_id for v in self.uploads])
-        self.datasets = Dataset.m_def.a_mongo.objects(
-            dataset_id__in=set(
-                v for e in self.entries if e.datasets for v in e.datasets
+            await self._walk(
+                GraphNode(
+                    upload_id='__NOT_NEEDED__',
+                    entry_id='__NOT_NEEDED__',
+                    current_path=[],
+                    result_root=response,
+                    ref_result_root=self.global_root,
+                    archive=target_user,
+                    archive_root=None,
+                    definition=None,
+                    visited_path=set(),
+                    current_depth=0,
+                    reader=self,
+                ),
+                self.required_query,
+                self.global_config,
             )
-        )
-
-        await self._walk(
-            GraphNode(
-                upload_id='__NOT_NEEDED__',
-                entry_id='__NOT_NEEDED__',
-                current_path=[],
-                result_root=response,
-                ref_result_root=self.global_root,
-                archive=await self.retrieve_user(user_id),
-                archive_root=None,
-                definition=None,
-                visited_path=set(),
-                current_depth=0,
-                reader=self,
-            ),
-            self.required_query,
-            self.global_config,
-        )
 
         self._populate_error_list(response)
 
@@ -2039,7 +2133,62 @@ class UserReader(MongoReader):
         if config.pagination is not None:
             raise ConfigError('User reader does not support pagination.')
 
-        return MongoReader.validate_config(key, config)
+        return super().validate_config(key, config)
+
+
+class UserGroupReader(MongoReader):
+    # noinspection PyMethodOverriding
+    async def read(self, group_id: str):  # type: ignore
+        response: dict = {}
+
+        if self.global_root is None:
+            self.global_root = response
+            has_global_root: bool = False
+        else:
+            has_global_root = True
+
+        if isinstance(target_group := await self.retrieve_group(group_id), str):
+            # does not exist
+            self._log(
+                f'Group ID {group_id} does not exist.', error_type=QueryError.NOTFOUND
+            )
+        else:
+            await self._walk(
+                GraphNode(
+                    upload_id='__NOT_NEEDED__',
+                    entry_id='__NOT_NEEDED__',
+                    current_path=[],
+                    result_root=response,
+                    ref_result_root=self.global_root,
+                    archive=target_group,
+                    archive_root=None,
+                    definition=None,
+                    visited_path=set(),
+                    current_depth=0,
+                    reader=self,
+                ),
+                self.required_query,
+                self.global_config,
+            )
+
+        self._populate_error_list(response)
+
+        if not has_global_root:
+            self.global_root = None
+
+        return response
+
+    @classmethod
+    def validate_config(cls, key: str, config: RequestConfig):
+        try:
+            if config.query is not None:
+                config.query = UserGroupQuery.parse_obj(config.query)
+            if config.pagination is not None:
+                config.pagination = UserGroupPagination.parse_obj(config.pagination)
+        except Exception as e:
+            raise ConfigError(str(e))
+
+        return super().validate_config(key, config)
 
 
 class FileSystemReader(GeneralReader):
@@ -2403,7 +2552,7 @@ class ArchiveReader(ArchiveLikeReader):
 
         if required.pop(GeneralReader.__WILDCARD__, None):
             self._log(
-                "Wildcard '*' as field name is not supported in archive query as its data is not homogeneous",
+                "Wildcard '*' as field name is not supported in archive query as its data is not homogeneous.",
                 error_type=QueryError.NOTFOUND,
             )
 
@@ -3327,4 +3476,6 @@ __M_SEARCHABLE__: dict = {
     Token.USERS: UserReader,
     Token.DATASET: DatasetReader,
     Token.DATASETS: DatasetReader,
+    Token.GROUP: UserGroupReader,
+    Token.GROUPS: UserGroupReader,
 }

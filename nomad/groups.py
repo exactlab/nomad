@@ -15,14 +15,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+from __future__ import annotations
+
 import operator
 from functools import reduce
 from typing import Iterable, Optional, Union
 
 from mongoengine import Document, ListField, StringField
 from mongoengine.queryset.visitor import Q
+from pydantic import BaseModel, Field
 
 from nomad.utils import create_uuid
+
+
+# todo: this is just my quick fix to get things glued together
+# todo: UserGroup shall be a MSection just like User so that
+# todo: mongo document and pydantic model can be generated from the same source
+# todo: see also dataset
+class UserGroupModel(BaseModel):
+    group_id: str = Field()
+    group_name: Optional[str] = Field()
+    owner: str = Field()
+    members: Optional[list[str]] = Field()
 
 
 class UserGroup(Document):

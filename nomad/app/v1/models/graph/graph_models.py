@@ -20,7 +20,7 @@ from __future__ import annotations
 from typing import Optional, List, Union, Any, Literal
 from pydantic import BaseModel, Field, Extra
 
-from nomad.metainfo import Package
+from nomad.groups import UserGroupModel
 from nomad.graph.model import (
     RequestConfig,
     DatasetQuery,
@@ -240,6 +240,15 @@ class GraphMetainfo(BaseModel):
     m_children: MSection
 
 
+class GraphGroup(mapped(UserGroupModel, owner=GraphUser, members=List[GraphUser])):  # type: ignore
+    m_errors: List[Error]
+
+
+class GraphGroups(BaseModel):
+    m_errors: List[Error]
+    m_children: GraphGroup
+
+
 class Graph(BaseModel):
     users: GraphUsers
     entries: GraphEntries
@@ -247,6 +256,7 @@ class Graph(BaseModel):
     datasets: GraphDatasets
     search: GraphSearch
     metainfo: GraphMetainfo
+    groups: GraphGroups
 
 
 GraphRequest = generate_request_model(Graph)

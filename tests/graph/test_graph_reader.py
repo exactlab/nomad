@@ -97,16 +97,18 @@ user_dict = {
 }
 
 
+def increment():
+    n = 0
+    while True:
+        n += 1
+        yield n
+
+
+counter = increment()
+
+
 # noinspection SpellCheckingInspection,DuplicatedCode
 def test_remote_reference(json_dict, example_data_with_reference, user1):
-    def increment():
-        n = 0
-        while True:
-            n += 1
-            yield n
-
-    counter = increment()
-
     def __user_print(msg, required, *, result: dict = None):
         with UserReader(required, user=user1) as reader:
             if result:
@@ -2117,15 +2119,103 @@ def test_remote_reference(json_dict, example_data_with_reference, user1):
 
 
 # noinspection DuplicatedCode,SpellCheckingInspection
+def test_group_reader(groups_function, user1):
+    def __ge_print(msg, required, *, to_file: bool = False, result: dict = None):
+        with MongoReader(required, user=user1) as reader:
+            if result:
+                assert_dict(reader.sync_read(), result)
+            else:
+                rprint(f'\n\nExample: {next(counter)} -> {msg}:')
+                rprint(required)
+                if not to_file:
+                    rprint('output:')
+                    rprint(reader.sync_read())
+                else:
+                    with open('archive_reader_test.json', 'w') as f:
+                        f.write(json.dumps(reader.sync_read()))
+
+    __ge_print(
+        'general start from group',
+        {
+            Token.GROUP: {
+                'GGGGGGGGGGGGGGGGGGGG14': '*',
+            }
+        },
+        result={
+            'group': {
+                'GGGGGGGGGGGGGGGGGGGG14': {
+                    'group_id': 'GGGGGGGGGGGGGGGGGGGG14',
+                    'group_name': 'Group 14',
+                    'owner': {
+                        'name': 'Sheldon Cooper',
+                        'first_name': 'Sheldon',
+                        'last_name': 'Cooper',
+                        'email': 'sheldon.cooper@nomad-coe.eu',
+                        'user_id': '00000000-0000-0000-0000-000000000001',
+                        'username': 'scooper',
+                        'is_admin': False,
+                        'is_oasis_admin': True,
+                    },
+                    'members': [
+                        {
+                            'name': 'Rajesh Koothrappali',
+                            'first_name': 'Rajesh',
+                            'last_name': 'Koothrappali',
+                            'email': 'rajesh.koothrappali@nomad-fairdi.tests.de',
+                            'user_id': '00000000-0000-0000-0000-000000000004',
+                            'username': 'rkoothrappali',
+                            'is_admin': False,
+                        }
+                    ],
+                }
+            }
+        },
+    )
+    __ge_print(
+        'general start from group',
+        {
+            Token.GROUP: {
+                'GGGGGGGGGGGGGGGGGGGG14': {
+                    'owner': {
+                        'email': '*',
+                    },
+                },
+            }
+        },
+        result={
+            'group': {
+                'GGGGGGGGGGGGGGGGGGGG14': {
+                    'owner': {'email': 'sheldon.cooper@nomad-coe.eu'}
+                }
+            }
+        },
+    )
+    __ge_print(
+        'general start from group with query',
+        {
+            Token.GROUP: {
+                'm_request': {
+                    'query': {'user_id': '00000000-0000-0000-0000-000000000004'}
+                },
+                '*': {
+                    'owner': {
+                        'email': '*',
+                    },
+                },
+            }
+        },
+        result={
+            'group': {
+                'GGGGGGGGGGGGGGGGGGGG14': {
+                    'owner': {'email': 'sheldon.cooper@nomad-coe.eu'}
+                },
+            }
+        },
+    )
+
+
+# noinspection DuplicatedCode,SpellCheckingInspection
 def test_general_reader(json_dict, example_data_with_reference, user1):
-    def increment():
-        n = 0
-        while True:
-            n += 1
-            yield n
-
-    counter = increment()
-
     def __ge_print(msg, required, *, to_file: bool = False, result: dict = None):
         with MongoReader(required, user=user1) as reader:
             if result:
@@ -2513,14 +2603,6 @@ def test_general_reader(json_dict, example_data_with_reference, user1):
 
 # noinspection DuplicatedCode,SpellCheckingInspection
 def test_metainfo_reader(mongo_infra, user1):
-    def increment():
-        n = 0
-        while True:
-            n += 1
-            yield n
-
-    counter = increment()
-
     def __ge_print(msg, required, *, to_file: bool = False, result: dict = None):
         with MongoReader(required, user=user1) as reader:
             if result:
@@ -3012,14 +3094,6 @@ def test_metainfo_reader(mongo_infra, user1):
 
 # noinspection DuplicatedCode,SpellCheckingInspection
 def test_general_reader_search(json_dict, example_data_with_reference, user1):
-    def increment():
-        n = 0
-        while True:
-            n += 1
-            yield n
-
-    counter = increment()
-
     def __ge_print(msg, required, *, to_file: bool = False, result: dict = None):
         with MongoReader(required, user=user1) as reader:
             if result:
@@ -3162,14 +3236,6 @@ data:
 
 
 def test_custom_schema_archive_and_definition(user1, custom_data):
-    def increment():
-        n = 0
-        while True:
-            n += 1
-            yield n
-
-    counter = increment()
-
     def __entry_print(msg, required, *, to_file: bool = False, result: dict = None):
         with EntryReader(required, user=user1) as reader:
             response = reader.sync_read('id_example')
