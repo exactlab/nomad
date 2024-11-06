@@ -22,6 +22,7 @@ from collections.abc import Generator, Iterable
 from io import BytesIO
 
 import msgpack
+import msgspec.msgpack
 from bitarray import bitarray
 from msgpack import Unpacker
 
@@ -70,7 +71,7 @@ class Utility:
     # noinspection SpellCheckingInspection
     @staticmethod
     def unpackb(o):
-        return msgpack.unpackb(o, raw=False)
+        return msgspec.msgpack.decode(o)
 
     @staticmethod
     def unpack_entry(data: bytes) -> tuple[str, tuple]:

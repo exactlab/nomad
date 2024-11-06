@@ -90,6 +90,7 @@ infrastructure = [
     'pymongo==4.6.3',
     'mongoengine>=0.4',
     'msgpack>=1.0',
+    'msgspec',
     'oauthenticator==15.1.0',
     'optimade[mongo]==0.22.1',
     'pyjwt[crypto]==2.6.0',
