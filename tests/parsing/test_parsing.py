@@ -325,8 +325,8 @@ def parser_in_dir(dir):
 @pytest.fixture
 def matching_parser():
     return MatchingParser(
-        mainfile_mime_re=r'application/json|application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        mainfile_name_re=r'.*\.(json|xlsx)',
+        mainfile_mime_re=r'application/json|text/csv|application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        mainfile_name_re=r'.*\.(json|xlsx|csv)',
     )
 
 
@@ -349,17 +349,31 @@ def matching_parser():
         ),
         pytest.param(
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            {'Sheet1': {'__has_all_keys': ['col1', 'col2']}, '__comment_symbol': '#'},
+            {'Sheet1': {'__has_all_keys': ['col1', 'col2']}, '__has_comment': '#'},
             {'Sheet1': {'col1': 'value1', 'col2': 'value2'}},
             True,
             id='excel_content_match',
         ),
         pytest.param(
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            {'Sheet1': {'__has_all_keys': ['col1', 'col2']}, '__comment_symbol': '#'},
+            {'Sheet1': {'__has_all_keys': ['col1', 'col2']}, '__has_comment': '#'},
             {'Sheet1': {'col1': 'value1', 'col3': 'value3'}},
             False,
             id='excel_content_no_match',
+        ),
+        pytest.param(
+            'text/csv',
+            {'__has_all_keys': ['col1', 'col2']},
+            {'col1': ['value1'], 'col2': ['value2']},
+            True,
+            id='csv_content_match',
+        ),
+        pytest.param(
+            'text/csv',
+            {'__has_all_keys': ['col1', 'col2']},
+            {'col1': ['value1'], 'col3': ['value3']},
+            False,
+            id='csv_content_no_match',
         ),
     ],
 )
@@ -367,6 +381,7 @@ def test_is_mainfile_with_mocked_content(
     matching_parser, mime, mocked_dict, file_content, expected_result
 ):
     """Test is_mainfile with mocked content (JSON, Excel)."""
+    import pandas as pd
 
     matching_parser._mainfile_contents_dict = mocked_dict
 
@@ -390,6 +405,18 @@ def test_is_mainfile_with_mocked_content(
             ):
                 result = matching_parser.is_mainfile(
                     filename='mocked_file.xlsx',
+                    mime=mime,
+                    buffer=b'',
+                    decoded_buffer='',
+                )
+                assert result == expected_result
+        elif mime == 'text/csv':
+            with patch(
+                'pandas.read_csv',
+                return_value=pd.DataFrame(file_content),
+            ):
+                result = matching_parser.is_mainfile(
+                    filename='mocked_file.csv',
                     mime=mime,
                     buffer=b'',
                     decoded_buffer='',
