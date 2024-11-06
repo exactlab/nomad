@@ -96,6 +96,23 @@ class MetainfoPagination(Pagination):
         return [] if first == last else result[first:last]
 
 
+class UserGroupQuery(BaseModel):
+    # todo: define query specifics
+    user_id: str = Field(None)
+
+
+class UserGroupPagination(Pagination):
+    # todo: refine pagination logic
+    def order_result(self, result):
+        if self.order_by is None:
+            return result
+
+        prefix: str = '-' if self.order == Direction.desc else '+'
+        order_list: list = [f'{prefix}{self.order_by}', 'group_id']
+
+        return result.order_by(*order_list)
+
+
 class DirectiveType(Enum):
     plain = 'plain'
     resolved = 'resolved'
@@ -253,12 +270,13 @@ class RequestConfig(BaseModel):
     )
     pagination: Union[
         dict,
-        RawDirPagination,
         DatasetPagination,
-        UploadProcDataPagination,
-        MetadataPagination,
         EntryProcDataPagination,
+        MetadataPagination,
         MetainfoPagination,
+        RawDirPagination,
+        UploadProcDataPagination,
+        UserGroupPagination,
     ] = Field(
         None,
         description="""
@@ -269,7 +287,13 @@ class RequestConfig(BaseModel):
         """,
     )
     query: Union[
-        dict, DatasetQuery, UploadProcDataQuery, Metadata, EntryQuery, MetainfoQuery
+        dict,
+        DatasetQuery,
+        EntryQuery,
+        Metadata,
+        MetainfoQuery,
+        UploadProcDataQuery,
+        UserGroupQuery,
     ] = Field(
         None,
         description="""
@@ -278,7 +302,8 @@ class RequestConfig(BaseModel):
         It can only be defined at the root levels including Token.ENTRIES, Token.UPLOADS and 'm_datasets'.
         For Token.ENTRIES, the query is used in elastic search. It must comply with `WithQuery`.
         For Token.UPLOADS, the query is used in mongo search. It must comply with `UploadProcDataQuery`.
-        For 'm_datasets', the query is used in mongo search. It must comply with `DatasetQuery`.
+        For Token.DATASETS, the query is used in mongo search. It must comply with `DatasetQuery`.
+        For Token.GROUPS, the query is used in mongo search. It must comply with `UserGroupQuery`.
         """,
     )
 
