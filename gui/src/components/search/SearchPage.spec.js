@@ -19,7 +19,7 @@
 import React, { useMemo } from 'react'
 import { render, screen } from '../conftest.spec'
 import { expectMenu, expectSearchResults } from './conftest.spec'
-import { ui } from '../../config'
+import { defaultApp } from '../../defaultApp'
 import { SearchContext } from './SearchContext'
 import SearchPage from './SearchPage'
 
@@ -53,24 +53,23 @@ jest.mock('./SearchContext', () => ({
 
 describe('', () => {
   test('render search page components', async () => {
-    const context = ui.apps.options.entries
     render(
       <SearchContext
-          resource={context.resource}
-          initialPagination={context.pagination}
-          initialColumns={context.columns}
-          initialRows={context.rows}
-          initialMenu={context.menu}
-          initialFiltersLocked={context.filters_locked}
-          initialDashboard={context?.dashboard}
-          initialSearchSyntaxes={context?.search_syntaxes}
-          id={context?.path}
+          resource={defaultApp.resource}
+          initialPagination={defaultApp.pagination}
+          initialColumns={defaultApp.columns}
+          initialRows={defaultApp.rows}
+          initialMenu={defaultApp.menu}
+          initialFiltersLocked={defaultApp.filters_locked}
+          initialDashboard={defaultApp?.dashboard}
+          initialSearchSyntaxes={defaultApp?.search_syntaxes}
+          id={defaultApp?.path}
       >
         <SearchPage />
       </SearchContext>
     )
     // Test that menu is shown
-    await expectMenu(context.menu)
+    await expectMenu(defaultApp.menu)
 
     // Test that search bar is shown
     screen.getByPlaceholderText('Type your query or keyword here')
@@ -79,6 +78,6 @@ describe('', () => {
     screen.getByText('Your query will be shown here')
 
     // Test that results table is shown
-    await expectSearchResults(context.columns)
+    await expectSearchResults(defaultApp.columns)
   })
 })

@@ -444,36 +444,40 @@ def define_env(env):
 
     @env.macro
     def plugin_entry_point_list():  # pylint: disable=unused-variable
-        plugins = [plugin for plugin in config.plugins.entry_points.options.values()]
+        plugin_entry_points = [
+            plugin for plugin in config.plugins.entry_points.options.values()
+        ]
+        plugin_packages = config.plugins.plugin_packages
 
         def render_plugin(plugin: EntryPointType) -> str:
-            result = plugin.name
+            result = plugin.id
             docs_or_code_url = None
-            for field in [
-                'plugin_documentation_url',
-                'plugin_source_code_url',
-                'documentation',
-                'repository',
-            ]:
-                value = getattr(plugin, field, None)
-                if value:
-                    docs_or_code_url = value
-                    break
+            package = plugin_packages.get(getattr(plugin, 'plugin_package'))
+            if package is not None:
+                for field in [
+                    'repository',
+                    'homepage',
+                    'documentation',
+                ]:
+                    value = getattr(package, field, None)
+                    if value:
+                        docs_or_code_url = value
+                        break
             if docs_or_code_url:
-                result = f'[{plugin.name}]({docs_or_code_url})'
-            if plugin.description:
-                result = f'{result} ({plugin.description})'
+                result = f'[{plugin.id}]({docs_or_code_url})'
 
             return result
 
         categories = {}
-        for plugin in plugins:
+        for plugin_entry_point in plugin_entry_points:
             category = getattr(
-                plugin, 'plugin_type', getattr(plugin, 'entry_point_type', None)
+                plugin_entry_point,
+                'plugin_type',
+                getattr(plugin_entry_point, 'entry_point_type', None),
             )
             if category == 'schema':
                 category = 'schema package'
-            categories.setdefault(category, []).append(plugin)
+            categories.setdefault(category, []).append(plugin_entry_point)
 
         return '\n\n'.join(
             [

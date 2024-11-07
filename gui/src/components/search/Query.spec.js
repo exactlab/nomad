@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 import React from 'react'
-import { ui } from '../../config'
+import { defaultApp } from '../../defaultApp'
 import { render, screen } from '../conftest.spec'
 import QueryChips from './Query'
 import { SearchContext } from './SearchContext'
@@ -28,18 +28,17 @@ test.each([
   ['datetime', 'upload_create_time', 0, 'Upload create time', '01/01/1970'],
   ['boolean', 'results.properties.electronic.dos_electronic.spin_polarized', 'false', 'Spin-polarized', 'false']
 ])('%s', async (name, quantity, input, title, output) => {
-  const context = ui.apps.options.entries
   render(
     <SearchContext
-        resource={context.resource}
-        initialPagination={context.pagination}
-        initialColumns={context.columns}
-        initialRows={context.rows}
-        initialMenu={context?.menu}
-        initialFiltersLocked={context.filters_locked}
-        initialDashboard={context?.dashboard}
+        resource={defaultApp.resource}
+        initialPagination={defaultApp.pagination}
+        initialColumns={defaultApp.columns}
+        initialRows={defaultApp.rows}
+        initialMenu={defaultApp?.menu}
+        initialFiltersLocked={defaultApp.filters_locked}
+        initialDashboard={defaultApp?.dashboard}
         initialFilterValues={{[quantity]: input}}
-        initialSearchSyntaxes={context?.search_syntaxes}
+        initialSearchSyntaxes={defaultApp?.search_syntaxes}
     >
       <QueryChips/>
     </SearchContext>

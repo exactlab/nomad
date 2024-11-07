@@ -19,16 +19,15 @@
 import React from 'react'
 import { render, startAPI, closeAPI } from './conftest.spec'
 import { expectMenu, expectSearchResults } from './search/conftest.spec'
-import { ui } from '../config'
+import { defaultApp } from '../defaultApp'
 import UserDatapage from './UserdataPage'
 import { minutes } from '../setupTests'
 
 test('renders user data search page correctly', async () => {
-  const context = ui.apps.options.entries
   await startAPI('tests.states.search.search', 'tests/data/search/userdatapage', 'test', 'password')
   render(<UserDatapage />)
 
-  await expectMenu(context.menu)
-  await expectSearchResults(context.columns)
+  await expectMenu(defaultApp.menu)
+  await expectSearchResults(defaultApp.columns)
   closeAPI()
 }, 5 * minutes)

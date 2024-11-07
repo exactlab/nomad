@@ -20,10 +20,8 @@ import userEvent from '@testing-library/user-event'
 import { render, screen } from '../../conftest.spec'
 import { InputJMESPath } from './InputMetainfo'
 import { SearchContext } from '../SearchContext'
-import { ui } from '../../../config'
+import { defaultApp } from '../../../defaultApp'
 import { DType } from '../../../utils'
-
-const context = ui.apps.options.entries
 
 test.each([
   ['filter exists', 'results.material.n_elements', null],
@@ -36,15 +34,15 @@ test.each([
   const onChangeMock = jest.fn()
   render(
     <SearchContext
-        resource={context.resource}
-        initialPagination={context.pagination}
-        initialColumns={context.columns}
-        initialRows={context.rows}
-        initialSearchQuantities={context?.search_quantities}
-        initialMenu={context?.menu}
-        initialFiltersLocked={context.filters_locked}
-        initialDashboard={context?.dashboard}
-        initialSearchSyntaxes={context?.search_syntaxes}
+        resource={defaultApp.resource}
+        initialPagination={defaultApp.pagination}
+        initialColumns={defaultApp.columns}
+        initialRows={defaultApp.rows}
+        initialSearchQuantities={defaultApp?.search_quantities}
+        initialMenu={defaultApp?.menu}
+        initialFiltersLocked={defaultApp.filters_locked}
+        initialDashboard={defaultApp?.dashboard}
+        initialSearchSyntaxes={defaultApp?.search_syntaxes}
     >
         <InputJMESPath
           value={input}

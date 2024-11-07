@@ -99,6 +99,7 @@ export const MenuBarItem = React.forwardRef(({label, tooltip, route, href}, ref)
     ref={ref}
     component={href ? 'a' : 'li'}
     href={href}
+    disabled={!(route || href)}
     dense
     classes={{root: selected ? classes.selected : undefined}}
     onClick={handleClick}

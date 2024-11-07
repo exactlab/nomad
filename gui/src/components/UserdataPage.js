@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 import React from 'react'
-import { ui } from '../config'
+import { defaultApp } from '../defaultApp'
 import { cloneDeep } from 'lodash'
 import { withLoginRequired } from './api'
 import { SearchContext } from './search/SearchContext'
@@ -74,7 +74,7 @@ Once you assigned a DOI to a dataset, no entries can be removed or added to the 
 
 // Use the same context as in the global entries search, but with free-text
 // query enabled
-const context = cloneDeep(ui?.apps?.options?.entries)
+const context = cloneDeep(defaultApp)
 context.search_syntaxes.exclude = undefined
 
 const initialFiltersLocked = {

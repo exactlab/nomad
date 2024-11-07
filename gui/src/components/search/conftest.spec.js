@@ -345,7 +345,7 @@ export async function expectSearchResults(columns, root = screen) {
       .map((column) => {
         const searchQuantity = column.search_quantity
         const unit = column.unit || defaultFilterData[searchQuantity]?.unit
-        const label = column.label || defaultFilterData[searchQuantity]?.label || getDisplayLabel({name: searchQuantity.split('.').slice(-1)[0]})
+        const label = column.title || defaultFilterData[searchQuantity]?.label || getDisplayLabel({name: searchQuantity.split('.').slice(-1)[0]})
         return unit
           ? `${label} (${new Unit(unit).label()})`
           : label
