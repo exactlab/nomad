@@ -1164,6 +1164,7 @@ class App(ConfigBaseModel):
         filters = values.get('filters')
         if filters and not values.get('search_quantities'):
             values['search_quantities'] = filters
+            del values['filters']
 
         # Backwards compatibility for FilterMenus
         filter_menus = values.get('filter_menus')
@@ -1862,7 +1863,10 @@ class UI(ConfigBaseModel):
         None, description='Controls the available unit systems.'
     )
     entry: Entry = Field(None, description='Controls the entry visualization.')
-    apps: Apps = Field(None, description='Contains the App definitions.')
+    apps: Apps = Field(
+        None,
+        deprecated='The "ui.apps" field is deprecated. You should define apps either via plugins or in "plugins.entry_points.options".',
+    )
     north: NORTHUI = Field(
         NORTHUI(), description='NORTH (NOMAD Remote Tools Hub) UI configuration.'
     )

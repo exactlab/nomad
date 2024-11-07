@@ -19,6 +19,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Route } from 'react-router'
+import { isEmpty } from 'lodash'
 import { CacheRoute, CacheSwitch } from 'react-router-cache-route'
 import { matchPath, useLocation, Redirect, useHistory, Link as RouterLink } from 'react-router-dom'
 import { Button, Link, makeStyles, Tooltip } from '@material-ui/core'
@@ -163,40 +164,39 @@ const uploadRoutes = [
   }
 ]
 
-const searchRoutes = apps
-  .map((context) => {
-    const routeMap = {
-      entries: entryRoutes
-    }
+const searchRoutes = isEmpty(apps)
+  ? [{menu: 'No apps available'}]
+  : apps.map((app) => {
+    const routeMap = {entries: entryRoutes}
     return {
-      path: context.path,
+      path: app.path,
       exact: true,
       cache: 'always',
-      menu: context.label,
-      tooltip: context.description,
-      breadcrumb: context.breadcrumb || context.label,
-      category: context.category,
+      menu: app.label,
+      tooltip: app.description,
+      breadcrumb: app.breadcrumb || app.label,
+      category: app.category,
       render: (props) => (
         <SearchContext
-          resource={context.resource}
-          initialPagination={context.pagination}
-          initialColumns={context.columns}
-          initialRows={context.rows}
-          initialMenu={context.menu}
-          initialSearchQuantities={context?.search_quantities}
-          initialFiltersLocked={context.filters_locked}
-          initialDashboard={context?.dashboard}
-          initialSearchSyntaxes={context?.search_syntaxes}
-          id={context?.path}
+          resource={app.resource}
+          initialPagination={app.pagination}
+          initialColumns={app.columns}
+          initialRows={app.rows}
+          initialMenu={app.menu}
+          initialSearchQuantities={app?.search_quantities}
+          initialFiltersLocked={app.filters_locked}
+          initialDashboard={app?.dashboard}
+          initialSearchSyntaxes={app?.search_syntaxes}
+          id={app?.path}
         >
           <SearchPage/>
         </SearchContext>
       ),
       help: {
         title: 'About this page',
-        content: context.readme || context.description
+        content: app.readme || app.description
       },
-      routes: routeMap[context.resource]
+      routes: routeMap[app.resource]
     }
   })
 

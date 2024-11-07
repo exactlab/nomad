@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 import React from 'react'
-import { ui } from '../../config'
+import { defaultApp } from '../../defaultApp'
 import { render, screen, within } from '../conftest.spec'
 import userEvent from '@testing-library/user-event'
 import { SearchContext } from './SearchContext'
@@ -44,17 +44,16 @@ describe('searchbar queries', function() {
     ['range, gt-gte', '0 > results.material.n_elements >= 1', 'range'],
     ['range, gte-gte', '0 >= results.material.n_elements >= 1', 'range']
   ])('%s', async (name, input, type) => {
-    const context = ui.apps.options.entries
     render(
       <SearchContext
-          resource={context.resource}
-          initialPagination={context.pagination}
-          initialColumns={context.columns}
-          initialRows={context.rows}
-          initialMenu={context?.menu}
-          initialFiltersLocked={context.filters_locked}
-          initialDashboard={context?.dashboard}
-          initialSearchSyntaxes={context?.search_syntaxes}
+          resource={defaultApp.resource}
+          initialPagination={defaultApp.pagination}
+          initialColumns={defaultApp.columns}
+          initialRows={defaultApp.rows}
+          initialMenu={defaultApp?.menu}
+          initialFiltersLocked={defaultApp.filters_locked}
+          initialDashboard={defaultApp?.dashboard}
+          initialSearchSyntaxes={defaultApp?.search_syntaxes}
       >
         <SearchBar />
       </SearchContext>
@@ -84,18 +83,17 @@ describe('suggestions: history', function() {
     window.localStorage.removeItem('nomad-searchcontext-entries')
   })
   test('initial suggestions are shown in correct order upon focus', async () => {
-    const context = ui.apps.options.entries
     render(
       <SearchContext
-          resource={context.resource}
-          initialPagination={context.pagination}
-          initialColumns={context.columns}
-          initialRows={context.rows}
-          initialMenu={context?.menu}
-          initialFiltersLocked={context.filters_locked}
-          initialDashboard={context?.dashboard}
-          initialSearchSyntaxes={context?.search_syntaxes}
-          id={context?.path}
+          resource={defaultApp.resource}
+          initialPagination={defaultApp.pagination}
+          initialColumns={defaultApp.columns}
+          initialRows={defaultApp.rows}
+          initialMenu={defaultApp?.menu}
+          initialFiltersLocked={defaultApp.filters_locked}
+          initialDashboard={defaultApp?.dashboard}
+          initialSearchSyntaxes={defaultApp?.search_syntaxes}
+          id={defaultApp?.path}
       >
         <SearchBar />
       </SearchContext>
@@ -109,18 +107,17 @@ describe('suggestions: history', function() {
     expect(options[2]).toHaveTextContent('oldest')
   })
   test('options are filtered according to input', async () => {
-    const context = ui.apps.options.entries
     render(
       <SearchContext
-          resource={context.resource}
-          initialPagination={context.pagination}
-          initialColumns={context.columns}
-          initialRows={context.rows}
-          initialMenu={context?.menu}
-          initialFiltersLocked={context.filters_locked}
-          initialDashboard={context?.dashboard}
-          initialSearchSyntaxes={context?.search_syntaxes}
-          id={context?.path}
+          resource={defaultApp.resource}
+          initialPagination={defaultApp.pagination}
+          initialColumns={defaultApp.columns}
+          initialRows={defaultApp.rows}
+          initialMenu={defaultApp?.menu}
+          initialFiltersLocked={defaultApp.filters_locked}
+          initialDashboard={defaultApp?.dashboard}
+          initialSearchSyntaxes={defaultApp?.search_syntaxes}
+          id={defaultApp?.path}
       >
         <SearchBar />
       </SearchContext>
@@ -133,18 +130,17 @@ describe('suggestions: history', function() {
     expect(options[1]).toHaveTextContent('oldest')
   })
   test('clicking delete icon removes option from list', async () => {
-    const context = ui.apps.options.entries
     render(
       <SearchContext
-          resource={context.resource}
-          initialPagination={context.pagination}
-          initialColumns={context.columns}
-          initialRows={context.rows}
-          initialMenu={context?.menu}
-          initialFiltersLocked={context.filters_locked}
-          initialDashboard={context?.dashboard}
-          initialSearchSyntaxes={context?.search_syntaxes}
-          id={context?.path}
+          resource={defaultApp.resource}
+          initialPagination={defaultApp.pagination}
+          initialColumns={defaultApp.columns}
+          initialRows={defaultApp.rows}
+          initialMenu={defaultApp?.menu}
+          initialFiltersLocked={defaultApp.filters_locked}
+          initialDashboard={defaultApp?.dashboard}
+          initialSearchSyntaxes={defaultApp?.search_syntaxes}
+          id={defaultApp?.path}
       >
         <SearchBar />
       </SearchContext>

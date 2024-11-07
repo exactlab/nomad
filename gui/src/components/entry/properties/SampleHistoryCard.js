@@ -23,9 +23,9 @@ import { PropertyCard } from './PropertyCard'
 import { SearchContext, useSearchContext } from "../../search/SearchContext"
 import { SearchResults } from "../../search/SearchResults"
 import { cloneDeep } from "lodash"
-import { ui } from "../../../config"
+import { defaultApp } from "../../../defaultApp"
 
-const context = cloneDeep(ui?.apps?.options?.entries)
+const context = cloneDeep(defaultApp)
 const columns = [
   {search_quantity: 'entry_name', title: 'Name', align: 'left', selected: true},
   {search_quantity: 'entry_type', title: 'Entry type', align: 'left', selected: true},

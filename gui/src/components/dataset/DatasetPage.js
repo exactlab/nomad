@@ -19,7 +19,7 @@ import React, { useContext, useState, useEffect, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { cloneDeep } from 'lodash'
 import { Typography, makeStyles } from '@material-ui/core'
-import { ui } from '../../config'
+import { defaultApp } from '../../defaultApp'
 import { errorContext } from '../errors'
 import { useApi } from '../api'
 import SearchPage from '../search/SearchPage'
@@ -33,7 +33,7 @@ to explore a dataset with similar controls that the search page offers.
 
 // Use the same context as in the global entries search, but with free-text
 // query enabled
-const context = cloneDeep(ui?.apps?.options?.entries)
+const context = cloneDeep(defaultApp)
 context.search_syntaxes.exclude = undefined
 
 const useStyles = makeStyles(theme => ({

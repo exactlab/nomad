@@ -23,7 +23,7 @@ import {
   Dialog, DialogContent, IconButton, TextField, Tooltip
 } from "@material-ui/core"
 import {FreeformSearchContext, useSearchContext} from "../search/SearchContext"
-import {ui} from "../../config"
+import { defaultApp } from '../../defaultApp'
 import DialogActions from "@material-ui/core/DialogActions"
 import Button from "@material-ui/core/Button"
 import SearchPage from "../search/SearchPage"
@@ -35,7 +35,7 @@ import Autocomplete from "@material-ui/lab/Autocomplete"
 import {ItemButton, useLane} from "../archive/Browser"
 import ClearIcon from "@material-ui/icons/Clear"
 
-const context = cloneDeep(ui?.apps?.options?.eln)
+const context = cloneDeep(defaultApp)
 const shownColumns = [
   'entry_name',
   'entry_type',

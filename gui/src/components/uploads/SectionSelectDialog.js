@@ -24,7 +24,8 @@ import Button from '@material-ui/core/Button'
 import DialogActions from '@material-ui/core/DialogActions'
 import PropTypes from 'prop-types'
 import {FreeformSearchContext, useSearchContext} from "../search/SearchContext"
-import {ui, searchQuantities, apiBase} from "../../config"
+import {searchQuantities, apiBase} from "../../config"
+import {defaultApp} from "../../defaultApp"
 import SearchBar from '../search/SearchBar'
 import {useApi} from '../api'
 import {useUploadPageContext} from './UploadPageContext'
@@ -41,7 +42,7 @@ import {getItemLabelKey} from '../archive/ArchiveBrowser'
 // Use the same context as in the global entries search, but with free-text
 // query enabled
 const searchDialogContext = React.createContext()
-const context = cloneDeep(ui?.apps?.options?.entries)
+const context = cloneDeep(defaultApp)
 context.search_syntaxes.exclude = undefined
 
 const useStyles = makeStyles(theme => ({
