@@ -1045,6 +1045,8 @@ class EntryMetadata(MSection):
 
                 current_value = target_section
 
+            if isinstance(current_value, dict):
+                current_value = [ref.value for ref in current_value.values()]
             ref_list: list = []
             if hasattr(current_value, 'm_proxy_value'):
                 ref_list = [current_value]
