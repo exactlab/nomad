@@ -1347,8 +1347,11 @@ class MSection(metaclass=MObjectMeta):
 
         if isinstance(definition, Quantity):
             if definition.use_full_storage:
+                actual_name = (
+                    def_or_name if isinstance(def_or_name, str) else def_or_name.name
+                )
                 return _wrap(
-                    definition.__get__(self, full=full, actual_name=def_or_name)
+                    definition.__get__(self, full=full, actual_name=actual_name)
                 )
 
             target = definition.__get__(self)
