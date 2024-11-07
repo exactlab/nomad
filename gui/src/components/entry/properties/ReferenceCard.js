@@ -89,7 +89,7 @@ const ReferenceUsingCard = memo(({index}) => {
   const [referencingPool, setReferencingPool] = useState(null)
   const [referencedPool, setReferencedPool] = useState(null)
   const [openReferencing, setOpenReferencing] = useState(true)
-  const [openReferenced, setOpenReferenced] = useState(false)
+  const [openReferenced, setOpenReferenced] = useState(true)
 
   const {api} = useApi()
   const {raiseError} = useErrors()
