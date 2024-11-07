@@ -15,14 +15,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, {useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react'
-import PropTypes from 'prop-types'
-import { atom, useRecoilState, useRecoilValue } from 'recoil'
 import {
   Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, FormControl, FormControlLabel,
   FormGroup, FormHelperText, Grid, IconButton, makeStyles, MenuItem, TextField, Tooltip, Typography
 } from '@material-ui/core'
-import {useHistory, useRouteMatch} from 'react-router-dom'
+import grey from '@material-ui/core/colors/grey'
+import AddIcon from '@material-ui/icons/AddCircle'
+import ArrowDownIcon from '@material-ui/icons/ArrowDropDown'
+import NavigateIcon from '@material-ui/icons/ArrowForward'
+import ArrowRightIcon from '@material-ui/icons/ArrowRight'
+import DownloadIcon from '@material-ui/icons/CloudDownload'
+import UploadIcon from '@material-ui/icons/CloudUpload'
+import CodeIcon from '@material-ui/icons/Code'
+import DeleteIcon from '@material-ui/icons/Delete'
+import ReloadIcon from '@material-ui/icons/Replay'
+import SaveIcon from '@material-ui/icons/Save'
+import { Alert } from '@material-ui/lab'
+import classNames from 'classnames'
+import DOMPurify from 'dompurify'
+import { isArray, isNaN, partition, range } from 'lodash'
+import { complex, format } from 'mathjs'
+import PropTypes from 'prop-types'
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import ReactJson from 'react-json-view'
+import { useHistory, useRouteMatch } from 'react-router-dom'
+import { atom, useRecoilState, useRecoilValue } from 'recoil'
+import { apiBase } from '../../config'
+import {
+  appendDataUrl, createEntryUrl, createUploadUrl, formatTimestamp,
+  getDisplayLabel,
+  getOptions,
+  isWaitingForUpdateTestId,
+  parseNomadUrl, refType, resolveInternalRef,
+  resolveNomadUrl,
+  resolveNomadUrlNoThrow,
+  systemMetainfoUrl, titleCase
+} from '../../utils'
+import { useApi } from '../api'
+import { SourceApiCall, SourceApiDialogButton, SourceJsonDialogButton } from '../buttons/SourceDialogButton'
+import { useDataStore, useEntryStoreObj } from '../DataStore'
+import { Download } from '../entry/Download'
+import { useEntryStore } from '../entry/EntryContext'
+import { useErrors } from '../errors'
+import Markdown from '../Markdown'
+import { EntryButton } from '../nav/Routes'
+import { Quantity as Q } from '../units/Quantity'
+import { useDisplayUnit } from '../units/useDisplayUnit'
+import H5Web from '../visualization/H5Web'
+import Pagination from '../visualization/Pagination'
+import ArchiveSearchBar from './ArchiveSearchBar'
 import Browser, {
   Adaptor, browserContext, Compartment, Content, Item, ItemChip, laneContext, useLane
 } from './Browser'
@@ -32,47 +73,11 @@ import {
   removeSubSection, SectionMDef, SubSectionMDef, useMetainfo
 } from './metainfo'
 import { ArchiveTitle, DefinitionLabel, metainfoAdaptorFactory } from './MetainfoBrowser'
-import { Matrix, Number } from './visualizations'
-import Markdown from '../Markdown'
 import { Overview } from './Overview'
-import { Quantity as Q } from '../units/Quantity'
-import ArrowRightIcon from '@material-ui/icons/ArrowRight'
-import ArrowDownIcon from '@material-ui/icons/ArrowDropDown'
-import DownloadIcon from '@material-ui/icons/CloudDownload'
-import SaveIcon from '@material-ui/icons/Save'
-import AddIcon from '@material-ui/icons/AddCircle'
-import CodeIcon from '@material-ui/icons/Code'
-import DeleteIcon from '@material-ui/icons/Delete'
-import grey from '@material-ui/core/colors/grey'
-import classNames from 'classnames'
-import { useApi } from '../api'
-import { useErrors } from '../errors'
-import { SourceApiCall, SourceApiDialogButton, SourceJsonDialogButton } from '../buttons/SourceDialogButton'
-import { Download } from '../entry/Download'
-import Pagination from '../visualization/Pagination'
-import SectionEditor from './SectionEditor'
 import PlotlyFigure from './PlotlyFigure'
-import {
-  appendDataUrl, createEntryUrl, createUploadUrl, formatTimestamp, parseNomadUrl, refType, resolveInternalRef,
-  resolveNomadUrl, systemMetainfoUrl, titleCase, isWaitingForUpdateTestId, resolveNomadUrlNoThrow, getOptions,
-  getDisplayLabel
-} from '../../utils'
-import { EntryButton } from '../nav/Routes'
-import NavigateIcon from '@material-ui/icons/ArrowForward'
-import ReloadIcon from '@material-ui/icons/Replay'
-import UploadIcon from '@material-ui/icons/CloudUpload'
-import {apiBase} from '../../config'
-import { Alert } from '@material-ui/lab'
-import { complex, format } from 'mathjs'
-import ReactJson from 'react-json-view'
-import { range, isNaN, partition, isArray } from 'lodash'
-import { useDataStore, useEntryStoreObj } from '../DataStore'
-import { useEntryStore } from '../entry/EntryContext'
-import ArchiveSearchBar from './ArchiveSearchBar'
-import DOMPurify from 'dompurify'
+import SectionEditor from './SectionEditor'
+import { Matrix, Number } from './visualizations'
 import XYPlot from "./XYPlot"
-import { useDisplayUnit } from '../units/useDisplayUnit'
-import H5Web from '../visualization/H5Web'
 
 export const configState = atom({
   key: 'config',
@@ -549,6 +554,9 @@ class SectionAdaptor extends ArchiveAdaptor {
           const index = parseInt(indexStr)
           reference = value[index]
           urlSuffix = `${name}/${index}`
+        }
+        if (typeof value === 'object' && quantityUsesFullStorage(property)) {
+          reference = value?.m_value
         }
         if (!reference) {
           return this.adaptorFactory(

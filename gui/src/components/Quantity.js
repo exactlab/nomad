@@ -15,37 +15,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, {useMemo, useContext, useCallback} from 'react'
-import PropTypes from 'prop-types'
-import clsx from 'clsx'
 import {
-  makeStyles,
-  Typography,
-  Tooltip,
+  Box,
   IconButton,
+  Link,
+  makeStyles,
+  Table,
   TableBody,
+  TableCell,
   TableContainer,
   TableHead,
-  Table,
   TableRow,
-  TableCell,
-  Link,
-  Box
+  Tooltip,
+  Typography
 } from '@material-ui/core'
-import { DOI } from './dataset/DOI'
 import ClipboardIcon from '@material-ui/icons/Assignment'
+import clsx from 'clsx'
+import { get, isNil, isNumber, isString } from 'lodash'
+import PropTypes from 'prop-types'
+import React, { useCallback, useContext, useMemo } from 'react'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
-import { get, isNil, isString, isNumber } from 'lodash'
 import { searchQuantities } from '../config'
-import Placeholder from './visualization/Placeholder'
-import Ellipsis from './visualization/Ellipsis'
-import NoData from './visualization/NoData'
-import {formatNumber, formatTimestamp, authorList, serializeMetainfo, getDisplayLabel} from '../utils'
+import { authorList, formatNumber, formatTimestamp, getDisplayLabel, serializeMetainfo } from '../utils'
+import { DOI } from './dataset/DOI'
+import { MaterialLink, RouteLink } from './nav/Routes'
+import { defaultFilterData } from './search/FilterRegistry'
 import { Quantity as Q } from './units/Quantity'
 import { Unit } from './units/Unit'
 import { useUnitContext } from './units/UnitContext'
-import { defaultFilterData } from './search/FilterRegistry'
-import { MaterialLink, RouteLink } from './nav/Routes'
+import Ellipsis from './visualization/Ellipsis'
+import NoData from './visualization/NoData'
+import Placeholder from './visualization/Placeholder'
+import { quantityUsesFullStorage } from './archive/metainfo'
 
 /**
  * Component for showing a metainfo quantity value together with a name and
@@ -130,9 +131,14 @@ const Quantity = React.memo((props) => {
     format
   } = {...presets, ...props}
 
+  console.log('### 2', quantity, data)
+
   const getRenderFromType = useCallback((quantity, data) => {
     const type = quantity.type
-    const value = data[quantity.name]
+    let value = data[quantity.name]
+    if (typeof value === 'object' && quantityUsesFullStorage(quantity)) {
+      value = value?.[quantity.name]?.['m_value'] || 'unavailable'
+    }
     if (type.type_data === 'str') {
       return <Typography noWrap>
         {value}

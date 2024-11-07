@@ -24,7 +24,7 @@ import { extend } from 'lodash'
 import ListEditQuantity from '../editQuantity/ListEditQuantity'
 import InputConfig from '../search/input/InputConfig'
 import { editQuantityComponents } from '../editQuantity/EditQuantity'
-import { QuantityMDef } from './metainfo'
+import { QuantityMDef, quantityUsesFullStorage } from './metainfo'
 import {getAllVisibleProperties} from './ArchiveBrowser'
 import {QuantityRow, QuantityTable} from '../Quantity'
 import {PropertyPreview} from '../entry/properties/SectionCard'
@@ -34,13 +34,29 @@ const PropertyEditor = React.memo(function PropertyEditor({quantityDef, value, o
   const editAnnotation = editAnnotations[0] || {}
   const {component, props, ...moreProps} = editAnnotation
   const editComponent = component && editQuantityComponents[component]
+
+  const handleChange = useCallback((value) => {
+    if (quantityUsesFullStorage(quantityDef)) {
+      value = {
+        [quantityDef.name]: {m_value: value}
+      }
+    }
+    onChange(value)
+  }, [onChange, quantityDef])
+
   if (!editComponent) {
     return null
   }
+
+  value = value === undefined ? quantityDef.default : value
+  if (typeof value === 'object' && quantityUsesFullStorage(quantityDef)) {
+    value = value?.[quantityDef.name]?.m_value
+  }
+
   const editComponentProps = {
     quantityDef: quantityDef,
     value: value === undefined ? quantityDef.default : value,
-    onChange: onChange,
+    onChange: handleChange,
     ...moreProps,
     ...(props || {})
   }
