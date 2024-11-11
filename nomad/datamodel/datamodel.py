@@ -78,7 +78,7 @@ logger = utils.get_logger(__name__)
 def _check_mongo_connection():
     try:
         from nomad.infrastructure import mongo_client
-    except ImportError | ModuleNotFoundError:
+    except Exception:
         return
 
     global has_mongo
