@@ -3474,7 +3474,7 @@ class Rate(MSection):
     )
     reaction_rate = Quantity(
         type=np.float64,
-        shape=[],
+        shape=['*'],
         description="""
         The rate of the number of reactant or product molecules converted/produced,
         per mass of total catalyst, per time.
@@ -3486,7 +3486,7 @@ class Rate(MSection):
 
     specific_mass_rate = Quantity(
         type=np.float64,
-        shape=[],
+        shape=['*'],
         description="""
         The specific rate of the reactant, per mass of active catalyst component
         (e.g. metal).
@@ -3497,7 +3497,7 @@ class Rate(MSection):
     )
     specific_surface_area_rate = Quantity(
         type=np.float64,
-        shape=[],
+        shape=['*'],
         description="""
         The specific rate of the reactant, per surface area of active catalyst.
         """,
@@ -3517,7 +3517,7 @@ class Rate(MSection):
     )
     turnover_frequency = Quantity(
         type=np.float64,
-        shape=[],
+        shape=['*'],
         description="""
         The turnover frequency, calculated from mol of reactant or product per
         number of sites over time.

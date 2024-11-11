@@ -4917,7 +4917,9 @@ window.nomadArtifacts = {
         "type_data": "float64"
       },
       "unit": "mole / gram / second",
-      "shape": [],
+      "shape": [
+        "*"
+      ],
       "aggregatable": false,
       "dynamic": false,
       "repeats": true
@@ -4930,7 +4932,9 @@ window.nomadArtifacts = {
         "type_data": "float64"
       },
       "unit": "mole / gram / second",
-      "shape": [],
+      "shape": [
+        "*"
+      ],
       "aggregatable": false,
       "dynamic": false,
       "repeats": true
@@ -4943,7 +4947,9 @@ window.nomadArtifacts = {
         "type_data": "float64"
       },
       "unit": "mole / meter ** 2 / second",
-      "shape": [],
+      "shape": [
+        "*"
+      ],
       "aggregatable": false,
       "dynamic": false,
       "repeats": true
@@ -4956,7 +4962,9 @@ window.nomadArtifacts = {
         "type_data": "float64"
       },
       "unit": "1 / second",
-      "shape": [],
+      "shape": [
+        "*"
+      ],
       "aggregatable": false,
       "dynamic": false,
       "repeats": true
@@ -39273,7 +39281,9 @@ window.nomadArtifacts = {
                   "type_kind": "numpy",
                   "type_data": "float64"
                 },
-                "shape": [],
+                "shape": [
+                  "*"
+                ],
                 "unit": "mole / gram / second"
               },
               {
@@ -39294,7 +39304,9 @@ window.nomadArtifacts = {
                   "type_kind": "numpy",
                   "type_data": "float64"
                 },
-                "shape": [],
+                "shape": [
+                  "*"
+                ],
                 "unit": "mole / gram / second"
               },
               {
@@ -39315,7 +39327,9 @@ window.nomadArtifacts = {
                   "type_kind": "numpy",
                   "type_data": "float64"
                 },
-                "shape": [],
+                "shape": [
+                  "*"
+                ],
                 "unit": "mole / meter ** 2 / second"
               },
               {
@@ -39351,7 +39365,9 @@ window.nomadArtifacts = {
                   "type_kind": "numpy",
                   "type_data": "float64"
                 },
-                "shape": [],
+                "shape": [
+                  "*"
+                ],
                 "unit": "1 / second"
               }
             ]
