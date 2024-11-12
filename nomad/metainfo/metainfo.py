@@ -3254,7 +3254,10 @@ class Quantity(Property):
             return value
 
         if self.unit is not None and isinstance(self.type, Number):
-            return value * self.unit
+            # Note that we cannot do simple multiplication here as Pint units
+            # with offsets do not support multiplication:
+            # https://pint.readthedocs.io/en/stable/user/nonmult.html
+            return units.Quantity(value, self.unit)
 
         return value
 
