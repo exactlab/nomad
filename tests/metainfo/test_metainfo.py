@@ -710,6 +710,14 @@ class TestM1:
         assert system.atom_positions.units == ureg.meter
         assert system.atom_positions[0][0] < 0.1 * ureg.meter
 
+    def test_offset_unit(self):
+        class MySection(MSection):
+            temperature = Quantity(unit='degree_Celsius', type=float)
+
+        system = MySection()
+        system.temperature = 100
+        assert pytest.approx(system.temperature.to(ureg('K')).m) == 373.15
+
     @pytest.mark.parametrize('dtype', MTypes.num)
     @pytest.mark.parametrize('shape', [None, [1, 2]])
     def test_setting_with_dimensionless_unit(self, dtype, shape):
