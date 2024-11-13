@@ -35,8 +35,6 @@ from nomad.metainfo.metainfo import (
     Package,
     DeriveError,
     MetainfoError,
-    Environment,
-    Context,
     derived,
 )
 from nomad.metainfo import (
@@ -54,10 +52,8 @@ from nomad.metainfo.example import (
     SCC,
     m_package as example_package,
 )
-from nomad import utils
 from nomad.units import ureg
 
-from tests import utils as test_utils
 from tests.metainfo import MTypes
 
 
@@ -1066,22 +1062,6 @@ class TestM1:
         )
         for i, [_, _, _, path] in enumerate(section.m_traverse()):
             assert path == expected[i]
-
-
-class TestEnvironment:
-    @pytest.fixture
-    def env(self) -> Environment:
-        env = Environment()
-        env.m_add_sub_section(Environment.packages, example_package)
-        return env
-
-    def test_create(self, env):
-        assert env is not None
-
-    def test_resolve(self, env: Environment):
-        sub_section_system = env.resolve_definition('systems', SubSection)
-        assert sub_section_system.m_def == SubSection.m_def
-        assert sub_section_system.name == 'systems'
 
 
 @pytest.mark.parametrize('as_dict', [True, False])

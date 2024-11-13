@@ -19,12 +19,11 @@
 import importlib
 
 from nomad.config import config
-from nomad.config.models.plugins import Schema, SchemaPackageEntryPoint
+from nomad.config.models.plugins import Schema
 
 from . import (
     annotations,
 )  # Should be imported first to register the annotations before they are used
-from .simulation import m_env
 from .downloads import m_package
 from .plot import m_package
 

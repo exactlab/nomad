@@ -42,7 +42,6 @@ from .metainfo import (
     Category,
     Package,
     SchemaPackage,
-    Environment,
     MEnum,
     Datetime,
     Capitalized,

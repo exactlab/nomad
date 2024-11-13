@@ -18,7 +18,6 @@
 
 import sys
 
-from nomad.metainfo import Environment
 from .data import User, Author, UserReference, AuthorReference
 from .datamodel import (
     Dataset,
@@ -31,18 +30,25 @@ from .datamodel import (
     EntryArchive,
 )
 from .optimade import OptimadeEntry, Species
-from .metainfo import m_env
 from .results import Results
 from .data import EntryData, ArchiveSection, Schema
 from nomad.config.models.plugins import SchemaPackageEntryPoint
 from .context import Context, ClientContext, ServerContext
+from ..metainfo import MSection, Package, SubSection
 
-m_env.m_add_sub_section(
-    Environment.packages, sys.modules['nomad.datamodel.datamodel'].m_package
-)  # type: ignore
-m_env.m_add_sub_section(
-    Environment.packages, sys.modules['nomad.datamodel.optimade'].m_package
-)  # type: ignore
+
+class Environment(MSection):
+    """Environments allow to manage many metainfo packages and quickly access all definitions.
+
+    Environments provide a name-table for large-sets of metainfo definitions that span
+    multiple packages. It provides various functions to resolve metainfo definitions by
+    their names, legacy names, and qualified names.
+
+    Args:
+        packages: Packages in this environment.
+    """
+
+    packages = SubSection(sub_section=Package, repeats=True)
 
 
 _all_metainfo_environment = None
@@ -53,8 +59,7 @@ def all_metainfo_packages():
     Returns an Environment with all available Python metainfo packages. This will
     import all plugins, if they are not already imported.
     """
-    from nomad.metainfo import Package, Environment
-    from nomad.datamodel import EntryArchive
+    from nomad.metainfo import Package
     from nomad.config.models.plugins import PythonPluginBase
 
     # Due to lazyloading plugins, we need to explicitly

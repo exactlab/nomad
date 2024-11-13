@@ -2667,8 +2667,8 @@ def test_metainfo_reader(mongo_infra, user1):
                                     'name': 'name',
                                     'description': 'Specifies the name of the program that generated the data.',
                                     'categories': [
-                                        '/packages/0/category_definitions/0',
-                                        '/packages/0/category_definitions/1',
+                                        '/category_definitions/0',
+                                        '/category_definitions/1',
                                     ],
                                     'type': {'type_kind': 'python', 'type_data': 'str'},
                                     'shape': [],
@@ -2677,8 +2677,8 @@ def test_metainfo_reader(mongo_infra, user1):
                                     'name': 'version',
                                     'description': 'Specifies the official release version of the program that was used.',
                                     'categories': [
-                                        '/packages/0/category_definitions/0',
-                                        '/packages/0/category_definitions/1',
+                                        '/category_definitions/0',
+                                        '/category_definitions/1',
                                     ],
                                     'type': {'type_kind': 'python', 'type_data': 'str'},
                                     'shape': [],
@@ -2686,17 +2686,15 @@ def test_metainfo_reader(mongo_infra, user1):
                                 {
                                     'name': 'version_internal',
                                     'description': 'Specifies a program version tag used internally for development purposes.\nAny kind of tagging system is supported, including git commit hashes.',
-                                    'categories': [
-                                        '/packages/0/category_definitions/1'
-                                    ],
+                                    'categories': ['/category_definitions/1'],
                                     'type': {'type_kind': 'python', 'type_data': 'str'},
                                 },
                                 {
                                     'name': 'compilation_datetime',
                                     'description': 'Contains the program compilation date and time from *Unix epoch* (00:00:00 UTC on\n1 January 1970) in seconds. For date and times without a timezone, the default\ntimezone GMT is used.',
                                     'categories': [
-                                        '/packages/0/category_definitions/0',
-                                        '/packages/0/category_definitions/1',
+                                        '/category_definitions/0',
+                                        '/category_definitions/1',
                                     ],
                                     'type': {
                                         'type_kind': 'numpy',
@@ -2709,8 +2707,8 @@ def test_metainfo_reader(mongo_infra, user1):
                                     'name': 'compilation_host',
                                     'description': 'Specifies the host on which the program was compiled.',
                                     'categories': [
-                                        '/packages/0/category_definitions/0',
-                                        '/packages/0/category_definitions/1',
+                                        '/category_definitions/0',
+                                        '/category_definitions/1',
                                     ],
                                     'type': {'type_kind': 'python', 'type_data': 'str'},
                                     'shape': [],
@@ -2898,7 +2896,7 @@ def test_metainfo_reader(mongo_infra, user1):
                         {
                             'name': 'ProgramInfo',
                             'description': 'Contains information on the program that generated the data, i.e. the program_name,\nprogram_version, program_compilation_host and program_compilation_datetime as direct\nchildren of this field.',
-                            'categories': ['/packages/0/category_definitions/0'],
+                            'categories': ['/category_definitions/0'],
                         },
                     ],
                     'all_base_sections': {
