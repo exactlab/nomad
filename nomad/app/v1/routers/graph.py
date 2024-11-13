@@ -17,6 +17,8 @@
 #
 
 from fastapi import Depends, APIRouter, Body, HTTPException
+from fastapi.responses import ORJSONResponse
+from pydantic.json import ENCODERS_BY_TYPE
 
 from nomad.graph.graph_reader import (
     MongoReader,
@@ -24,6 +26,7 @@ from nomad.graph.graph_reader import (
     GeneralReader,
     UserReader,
     Token,
+    LazyUserWrapper,
 )
 from .auth import create_user_dependency
 from .entries import EntriesArchive
@@ -34,11 +37,36 @@ router = APIRouter()
 default_tag = 'graph'
 
 
+# see /fastapi/encoders.py
+ENCODERS_BY_TYPE[LazyUserWrapper] = lambda v: v.to_json()
+
+
 def normalise_response(response):
     if GeneralReader.__CACHE__ in response:
         del response[GeneralReader.__CACHE__]
 
     return response
+
+
+def unwrap_response(result):
+    if isinstance(result, dict):
+        for key, value in result.items():
+            if isinstance(value, LazyUserWrapper):
+                result[key] = value.to_json()
+            elif key != Token.ARCHIVE:
+                unwrap_response(value)
+    elif isinstance(result, list):
+        for idx, value in enumerate(result):
+            if isinstance(value, LazyUserWrapper):
+                result[idx] = value.to_json()
+            else:
+                unwrap_response(value)
+
+
+class GraphJSONResponse(ORJSONResponse):
+    def render(self, content):
+        unwrap_response(normalise_response(content))
+        return super().render(content)
 
 
 def relocate_children(request):
@@ -54,13 +82,14 @@ def relocate_children(request):
     tags=[default_tag],
     summary='Query the database with a graph style without verification.',
     description='Query the database with a graph style without verification.',
+    response_class=GraphJSONResponse,
 )
 async def raw_query(
     query=Body(...), user: User = Depends(create_user_dependency(required=True))
 ):
     relocate_children(query)
     with MongoReader(query, user=user) as reader:
-        return normalise_response(await reader.read())
+        return GraphJSONResponse(await reader.read())
 
 
 @router.post(
@@ -95,6 +124,7 @@ async def basic_query(
     '/archive/query',
     tags=[default_tag],
     summary='Search entries and access their archives',
+    response_class=GraphJSONResponse,
 )
 async def archive_query(
     data: EntriesArchive, user: User = Depends(create_user_dependency())
@@ -120,4 +150,4 @@ async def archive_query(
     with UserReader(graph_dict, user=user) as reader:
         response: dict = await reader.read(user.user_id)
 
-    return normalise_response(response)
+    return GraphJSONResponse(response)

@@ -21,7 +21,7 @@ import functools
 import re
 from enum import Enum
 from hashlib import sha1
-from typing import FrozenSet, Optional, Union
+from typing import Optional, Union
 
 from pydantic import BaseModel, Field, Extra, ValidationError, validator
 
@@ -167,7 +167,7 @@ class RequestConfig(BaseModel):
         The `*` is a shortcut of `plain`.
         """,
     )
-    include: Optional[FrozenSet[str]] = Field(
+    include: Optional[frozenset[str]] = Field(
         None,
         regex=r'^[*?+a-zA-z_\d./]*$',
         description="""
@@ -176,7 +176,7 @@ class RequestConfig(BaseModel):
         Only one of `include` and `exclude` can be set.
         """,
     )
-    exclude: Optional[FrozenSet[str]] = Field(
+    exclude: Optional[frozenset[str]] = Field(
         None,
         regex=r'^[*?+a-zA-z_\d./]*$',
         description="""
@@ -372,9 +372,25 @@ class RequestConfig(BaseModel):
             self.json(exclude_defaults=True, exclude_none=True).encode('utf-8')
         ).hexdigest()
 
+    def is_plain(self):
+        """
+        Check if the current configuration is plain.
+        A plain configuration retrieves all the data without any further processing.
+        This can be used to skip traversing the subtree so that performance can be improved.
+        """
+        return (
+            self.directive == DirectiveType.plain
+            and self.include_definition == DefinitionType.none
+            and self.index is None
+            and self.depth is None
+            and self.max_list_size is None
+            and self.max_dict_size is None
+            and self.include == frozenset({'*'})
+        )
+
 
 @functools.lru_cache(maxsize=1024)
-def _normalise_pattern(pattern: FrozenSet[str]) -> FrozenSet[str]:  # pylint: disable=no-self-argument
+def _normalise_pattern(pattern: frozenset[str]) -> frozenset[str]:  # pylint: disable=no-self-argument
     """
     Normalise the patterns.
     The received pattern can be regular expression and glob pattern, such as `quantity` and `quantity*`.

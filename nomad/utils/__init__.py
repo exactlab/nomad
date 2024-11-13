@@ -268,6 +268,7 @@ def timer(
         event: The log message/event.
         method: The log method that should be used. Must be a valid logger method name.
             Default is 'info'.
+        lnr_event: The log message in the case of error.
         log_memory: Log process memory usage before and after.
         **kwargs: Additional logger data that is passed to the log entry.
 

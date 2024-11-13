@@ -541,6 +541,7 @@ def assert_list(l1, l2):
 
 def assert_dict(d1: dict, d2):
     d1.pop('m_def', None)
+    d2.pop('m_def', None)
     assert set(d1.keys()) == set(d2.keys())
     for k, v in d1.items():
         if isinstance(v, dict):
