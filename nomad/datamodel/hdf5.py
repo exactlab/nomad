@@ -67,6 +67,28 @@ class HDF5Wrapper:
 
 
 class HDF5Reference(NonPrimitive):
+    """
+    A utility class for handling HDF5 file operations within a given archive.
+
+    This class provides static methods to read, write, and manage datasets and attributes
+    in HDF5 files. It ensures that the operations are performed correctly by resolving
+    necessary file and upload information from the provided paths and archives.
+
+    Methods
+    -------
+    _get_upload_files(archive, path: str)
+        Retrieves the file ID, path, and upload files object from the given path.
+
+    write_dataset(archive, value: Any, path: str) -> None
+        Writes a given value to an HDF5 file at the specified path.
+
+    read_dataset(archive, path: str) -> Any
+        Reads a dataset from an HDF5 file at the specified path.
+
+    _normalize_impl(self, value, **kwargs)
+        Validates if the given value matches the HDF5 reference format.
+    """
+
     @staticmethod
     def _get_upload_files(archive, path: str):
         match = match_hdf5_reference(path)
@@ -78,24 +100,62 @@ class HDF5Reference(NonPrimitive):
         from nomad import files
         from nomad.datamodel.context import ServerContext
 
-        upload_id, _ = ServerContext._get_ids(archive, required=True)
+        upload_id = match['upload_id']
+        if not upload_id:
+            upload_id, _ = ServerContext._get_ids(archive, required=True)
         return file_id, match['path'], files.UploadFiles.get(upload_id)
 
     @staticmethod
-    def write_dataset(archive, value: Any, path: str) -> None:
+    def write_dataset(
+        archive, value: Any, path: str, attributes: dict = {}, quantity_name: str = None
+    ) -> None:
         """
         Write value to HDF5 file specified in path following the form
         filename.h5#/path/to/dataset. upload_id is resolved from archive.
-        """
 
+        If attributes is provided, will write them to the hdf5 dataset referenced by
+        archive quantity with name quantity_name and to its parent group.
+        """
         file, path, upload_files = HDF5Reference._get_upload_files(archive, path)
         mode = 'r+b' if upload_files.raw_path_is_file(file) else 'wb'
         with h5py.File(upload_files.raw_file(file, mode), 'a') as f:
-            f.require_dataset(
-                path,
-                shape=getattr(value, 'shape', ()),
-                dtype=getattr(value, 'dtype', None),
-            )[...] = getattr(value, 'magnitude', value)
+            if path in f:
+                del f[path]
+            f[path] = getattr(value, 'magnitude', value)
+            dataset = f[path]
+
+            if attributes and quantity_name:
+                path_segments = path.rsplit('/', 1)
+                if len(path_segments) == 1:
+                    return
+
+                unit = attributes.get('unit')
+                long_name = attributes.get('long_name')
+                if unit:
+                    unit = unit if isinstance(unit, str) else format(unit, '~')
+                    dataset.attrs['units'] = unit
+                    long_name = f'{long_name} ({unit})'
+                if long_name:
+                    dataset.attrs['long_name'] = long_name
+
+                target_attributes = {
+                    key: val
+                    for key, val in attributes.items()
+                    if key not in ['signal', 'axes']
+                }
+                target_attributes['NX_class'] = 'NXdata'
+                signal = attributes.get('signal')
+                if quantity_name == signal:
+                    target_attributes['signal'] = path_segments[1]
+
+                axes = attributes.get('axes', [])
+                axes = [axes] if isinstance(axes, str) else axes
+                if quantity_name in axes:
+                    axes[axes.index(quantity_name)] = path_segments[1]
+                    target_attributes['axes'] = axes
+
+                group = dataset.parent
+                group.attrs.update(target_attributes)
 
     @staticmethod
     def read_dataset(archive, path: str) -> Any:
@@ -115,6 +175,22 @@ class HDF5Reference(NonPrimitive):
 
 
 class HDF5Dataset(NonPrimitive):
+    """
+    A utility class for handling HDF5 dataset operations within a given archive.
+
+    This class provides methods to serialize and normalize HDF5 datasets, ensuring
+    that the datasets are correctly referenced and stored within the HDF5 files.
+
+    Methods
+    -------
+    _serialize_impl(self, value, **kwargs)
+        Serializes the given value into a reference string for HDF5 storage.
+
+    _normalize_impl(self, value, **kwargs)
+        Normalizes the given value, ensuring it is a valid HDF5 dataset reference
+        or a compatible data type (e.g., str, np.ndarray, h5py.Dataset, pint.Quantity).
+    """
+
     def _serialize_impl(self, value, **kwargs):
         if isinstance(value, str):
             return value

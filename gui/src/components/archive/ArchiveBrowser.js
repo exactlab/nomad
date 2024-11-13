@@ -969,7 +969,7 @@ export function H5WebView({section, def, uploadId, title}) {
     const sectionPath = h5Path.split('/').slice(0, -1).join('/')
     return <H5Web key={def.name} upload_id={h5UploadId || uploadId} filename={h5File} initialPath={sectionPath} source={h5Source} sidebarOpen={false}></H5Web>
   }
-  const resolve = (path, parent) => {
+  const resolve = (path, parent, m_def) => {
     let child = parent
     for (const segment of path.split('/')) {
       const properties = child?._properties || child
@@ -980,6 +980,13 @@ export function H5WebView({section, def, uploadId, title}) {
       child = isNaN(index) ? properties[segment] : properties[index] || child
       child = child?.sub_section || child
     }
+    if (m_def && m_def !== child._qualifiedName) {
+      for (const section of child?._allInternalInheritingSections || []) {
+        if (section._qualifiedName === m_def) {
+          return section
+        }
+      }
+    }
     return child
   }
 
@@ -989,7 +996,7 @@ export function H5WebView({section, def, uploadId, title}) {
     {h5Web(section, def)}
     {paths.map(path => {
       const subSection = resolve(path, section)
-      const subSectionDef = resolve(path, def)
+      const subSectionDef = resolve(path, def, subSection?.m_def)
       return subSection && subSectionDef && h5Web(subSection, subSectionDef)
     })}
   </Compartment>
