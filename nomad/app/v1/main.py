@@ -16,18 +16,19 @@
 # limitations under the License.
 #
 
-from typing import Any, cast
+import traceback
+
 from fastapi import FastAPI, status, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
-from starlette.types import ASGIApp, Message, Receive, Scope, Send
-from fastapi.routing import APIRoute
-import traceback
-import orjson
+from fastapi.responses import JSONResponse, RedirectResponse, ORJSONResponse
+from pyinstrument import Profiler
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import HTMLResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from nomad import utils
 from nomad.config import config
-
 from .common import root_path
 from .routers import (
     users,
@@ -49,13 +50,23 @@ from .routers import (
 logger = utils.get_logger(__name__)
 
 
-class ORJSONResponse(JSONResponse):
-    media_type = 'application/json'
+class LoggingMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
 
-    def render(self, content: Any) -> bytes:
-        return orjson.dumps(
-            content, option=orjson.OPT_INDENT_2 | orjson.OPT_NON_STR_KEYS
-        )  # pylint: disable=maybe-no-member
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        with utils.timer(logger, 'request handled', path=scope.get('path')):
+            await self.app(scope, receive, send)
+
+
+async def profile_request(request: Request, call_next):
+    if not request.query_params.get('__profile__', False):
+        return await call_next(request)
+
+    with Profiler(async_mode='enabled') as profiler:
+        await call_next(request)
+
+    return HTMLResponse(profiler.output_html())
 
 
 app = FastAPI(
@@ -73,36 +84,27 @@ app = FastAPI(
     """
     ),
     default_response_class=ORJSONResponse,
+    middleware=[
+        Middleware(
+            CORSMiddleware,
+            allow_origins=['*'],
+            allow_credentials=True,
+            allow_methods=['*'],
+            allow_headers=['*'],
+            expose_headers=['Content-Disposition'],
+        ),
+        Middleware(LoggingMiddleware),
+        Middleware(BaseHTTPMiddleware, dispatch=profile_request),
+    ],
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=['*'],
-    allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
-    expose_headers=['Content-Disposition'],
-)
 
-
-async def redirect_to_docs(req: Request):
+async def redirect_to_docs(_):
     return RedirectResponse(f'{root_path}/extensions/docs')
 
 
 # app.add_route(f'{root_path}', redirect_to_docs, include_in_schema=False)
 app.add_route('/', redirect_to_docs, include_in_schema=False)
-
-
-class LoggingMiddleware:
-    def __init__(self, app: ASGIApp) -> None:
-        self.app = app
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        with utils.timer(logger, 'request handled', path=scope.get('path')):
-            await self.app(scope, receive, send)
-
-
-app.add_middleware(LoggingMiddleware)
 
 
 @app.exception_handler(Exception)

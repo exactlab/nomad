@@ -24,8 +24,8 @@ FROM node:20 AS base_node
 FROM python:3.12-slim AS base_python
 # Keeps Python from buffering stdout and stderr to avoid situations where
 # the application crashes without emitting any logs due to buffering.
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH "${PYTHONPATH}:/backend/"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH="${PYTHONPATH}:/backend/"
 ENV UV_SYSTEM_PYTHON=1
 
 FROM base_python AS base_final
@@ -75,7 +75,7 @@ FROM base_python AS dev_python
 # Prevents Python from writing pyc files.
 ENV PYTHONDONTWRITEBYTECODE=1
 
-ENV RUNTIME docker
+ENV RUNTIME=docker
 
 WORKDIR /app
 
@@ -108,8 +108,8 @@ FROM base_node AS dev_node
 
 WORKDIR /app/gui
 
-ENV PATH /app/node_modules/.bin:$PATH
-ENV NODE_OPTIONS "--max_old_space_size=4096 --openssl-legacy-provider"
+ENV PATH=/app/node_modules/.bin:$PATH
+ENV NODE_OPTIONS="--max_old_space_size=4096 --openssl-legacy-provider"
 
 # Fetch and cache all (but only) the dependencies
 COPY gui/yarn.lock gui/package.json ./
@@ -123,11 +123,11 @@ COPY tests/states/archives/dft.json  /app/tests/states/archives/dft.json
 COPY gui .
 RUN echo "REACT_APP_BACKEND_URL=/fairdi/nomad/latest" > .env
 
-FROM dev_node as build_node
+FROM dev_node AS build_node
 
 RUN yarn run build
 
-FROM dev_python as dev_package
+FROM dev_python AS dev_package
 
 WORKDIR /app
 
@@ -185,7 +185,7 @@ RUN uv build --sdist
 # ================================================================================
 # We use slim for the final image
 # ================================================================================
-FROM base_builder as builder
+FROM base_builder AS builder
 
 # install
 COPY --from=dev_package /app/dist/nomad-lab-*.tar.gz .
@@ -222,6 +222,9 @@ COPY --chown=nomad:1000 --from=builder /usr/local/bin/jupyter* /usr/local/bin/
 RUN mkdir -p /app/.volumes/fs \
  && chown -R nomad:1000 /app \
  && chown -R nomad:1000 /usr/local/lib/python3.12/site-packages/nomad
+
+# for attaching profiler to running processes
+RUN echo "kernel.yama.ptrace_scope = 0" > /etc/sysctl.d/10-ptrace.conf
 
 USER nomad
 
