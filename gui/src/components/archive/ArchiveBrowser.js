@@ -281,7 +281,7 @@ const ArchiveConfigForm = React.memo(function ArchiveConfigForm({searchOptions, 
         </Tooltip>
         {entryId && <Download
           tooltip="download the archive"
-          url={`entries/${entryId}/archive/download?ignore_mime_type=true`}
+          url={`entries/${entryId}/archive/download`}
           component={IconButton}
         >
           <DownloadIcon/>

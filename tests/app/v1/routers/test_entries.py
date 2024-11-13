@@ -1081,33 +1081,25 @@ def test_entry_archive(auth_headers, client, example_data, user, entry_id, statu
 
 
 @pytest.mark.parametrize(
-    'user, entry_id, ignore_mime_type, status_code',
+    'user, entry_id, status_code',
     [
-        pytest.param(None, 'id_01', False, 200, id='id'),
-        pytest.param(None, 'id_01', True, 200, id='id'),
-        pytest.param('user1', 'id_child_entries_child1', False, 200, id='child-entry'),
-        pytest.param('user1', 'id_child_entries_child1', True, 200, id='child-entry'),
-        pytest.param(None, 'id_02', True, 404, id='404-not-visible'),
-        pytest.param(None, 'doesnotexist', False, 404, id='404-does-not-exist'),
+        pytest.param(None, 'id_01', 200, id='id'),
+        pytest.param(None, 'id_01', 200, id='id'),
+        pytest.param('user1', 'id_child_entries_child1', 200, id='child-entry'),
+        pytest.param('user1', 'id_child_entries_child1', 200, id='child-entry'),
+        pytest.param(None, 'id_02', 404, id='404-not-visible'),
+        pytest.param(None, 'doesnotexist', 404, id='404-does-not-exist'),
     ],
 )
 def test_entry_archive_download(
-    auth_headers, client, example_data, user, entry_id, ignore_mime_type, status_code
+    auth_headers, client, example_data, user, entry_id, status_code
 ):
     response = client.get(
-        f'entries/{entry_id}/archive/download'
-        + ('?ignore_mime_type=true' if ignore_mime_type else ''),
+        f'entries/{entry_id}/archive/download',
         headers=auth_headers[user],
     )
     assert_response(response, status_code)
     if status_code == 200:
-        assert_browser_download_headers(
-            response,
-            media_type='application/octet-stream'
-            if ignore_mime_type
-            else 'application/json',
-            filename=entry_id + '.json',
-        )
         archive = response.json()
         assert 'metadata' in archive
         assert 'run' in archive
