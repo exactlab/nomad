@@ -41,13 +41,6 @@ default_tag = 'graph'
 ENCODERS_BY_TYPE[LazyUserWrapper] = lambda v: v.to_json()
 
 
-def normalise_response(response):
-    if GeneralReader.__CACHE__ in response:
-        del response[GeneralReader.__CACHE__]
-
-    return response
-
-
 def unwrap_response(result):
     if isinstance(result, dict):
         for key, value in result.items():
@@ -65,7 +58,9 @@ def unwrap_response(result):
 
 class GraphJSONResponse(ORJSONResponse):
     def render(self, content):
-        unwrap_response(normalise_response(content))
+        content.pop(GeneralReader.__CACHE__, None)
+
+        unwrap_response(content)
         return super().render(content)
 
 
@@ -117,7 +112,7 @@ async def basic_query(
     except Exception as e:
         raise HTTPException(422, detail=str(e))
 
-    return normalise_response(response)
+    return GraphJSONResponse(response)
 
 
 @router.post(
