@@ -215,7 +215,9 @@ class HDF5Dataset(NonPrimitive):
         if not (section_context := section.m_root().m_context):
             raise ValueError('Cannot normalize HDF5 value without context.')
 
-        if not isinstance(value, (str, np.ndarray, h5py.Dataset, pint.Quantity)):
+        if not isinstance(
+            value, (str, np.ndarray, h5py.Dataset, pint.Quantity, HDF5Wrapper)
+        ):
             raise ValueError(f'Invalid HDF5 dataset value: {value}.')
 
         hdf5_path: str = section_context.hdf5_path(section)
@@ -232,6 +234,7 @@ class HDF5Dataset(NonPrimitive):
                     segment = f'{file}/{path}'
                 else:
                     segment = path
+
         else:
             unit = self._definition.unit
             if isinstance(value, pint.Quantity):
@@ -241,15 +244,20 @@ class HDF5Dataset(NonPrimitive):
                     unit = value.units
                     value = value.magnitude
 
+            if isinstance(value, HDF5Wrapper):
+                if hdf5_path != value.file:
+                    raise ValueError('Cannot reference another HDF5 archive.')
+
             segment = f'{section.m_path()}/{self._definition.name}'
             with File(hdf5_path, 'a') as hdf5_file:
                 target_group = hdf5_file.require_group(section.m_path())
-                target_dataset = target_group.require_dataset(
-                    self._definition.name,
-                    shape=getattr(value, 'shape', ()),
-                    dtype=getattr(value, 'dtype', None),
+                if self._definition.name in target_group:
+                    del target_group[self._definition.name]
+
+                target_group[self._definition.name] = (
+                    hdf5_file[value.path] if isinstance(value, HDF5Wrapper) else value
                 )
-                target_dataset[...] = value
+                target_dataset = target_group[self._definition.name]
                 # add attrs
                 if unit is not None:
                     unit = format(unit, '~')
