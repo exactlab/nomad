@@ -30,6 +30,7 @@ from nomad.graph.graph_reader import (
     MongoReader,
     GeneralReader,
     Token,
+    LazyUserWrapper,
 )
 from nomad.datamodel import EntryArchive
 from nomad.utils.exampledata import ExampleData
@@ -56,6 +57,8 @@ def assert_time(i, j):
 def assert_list(l1, l2):
     assert len(l1) == len(l2)
     for i, j in zip(l1, l2):
+        if isinstance(i, LazyUserWrapper):
+            i = i.to_json()
         if isinstance(i, dict):
             assert_dict(i, j)
         elif isinstance(i, list):
@@ -75,6 +78,8 @@ def assert_dict(d1, d2):
         del d2['m_def']
     assert set(d1.keys()) == set(d2.keys())
     for k, v in d1.items():
+        if isinstance(v, LazyUserWrapper):
+            v = v.to_json()
         if isinstance(v, dict):
             assert_dict(v, d2[k])
         elif isinstance(v, list):
@@ -1016,18 +1021,7 @@ def test_remote_reference(json_dict, example_data_with_reference, user1):
             'processing_failed': 0,
             'processing_successful': 6,
             'upload_files_server_path': 'id_published_with_ref',
-            'viewers': [
-                {
-                    'name': 'Sheldon Cooper',
-                    'first_name': 'Sheldon',
-                    'last_name': 'Cooper',
-                    'email': 'sheldon.cooper@nomad-coe.eu',
-                    'user_id': user_dict,
-                    'username': 'scooper',
-                    'is_admin': False,
-                    'is_oasis_admin': True,
-                }
-            ],
+            'viewers': [user_dict],
         },
     )
 
@@ -1467,7 +1461,7 @@ def test_remote_reference(json_dict, example_data_with_reference, user1):
                     'quantities': '__INTERNAL__:../uploads/id_published_with_ref/archive/id_03#/metadata/quantities',
                     'section_defs': '__INTERNAL__:../uploads/id_published_with_ref/archive/id_03#/metadata/section_defs',
                     'sections': '__INTERNAL__:../uploads/id_published_with_ref/archive/id_03#/metadata/sections',
-                    'text_search_contents': [],
+                    'text_search_contents': '__INTERNAL__:../uploads/id_published_with_ref/archive/id_03#/metadata/text_search_contents',
                     'upload_create_time': '2024-05-28T19:14:10.749059+00:00',
                     'upload_id': 'id_published_with_ref',
                     'upload_name': 'name_published',
@@ -1640,16 +1634,7 @@ def test_remote_reference(json_dict, example_data_with_reference, user1):
                 'processing_failed': 0,
                 'processing_successful': 6,
                 'upload_files_server_path': 'id_published_with_ref',
-                'main_author': {
-                    'name': 'Sheldon Cooper',
-                    'first_name': 'Sheldon',
-                    'last_name': 'Cooper',
-                    'email': 'sheldon.cooper@nomad-coe.eu',
-                    'user_id': user_dict,
-                    'username': 'scooper',
-                    'is_admin': False,
-                    'is_oasis_admin': True,
-                },
+                'main_author': user_dict,
             },
         },
     )

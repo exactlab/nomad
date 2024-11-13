@@ -26,7 +26,7 @@ import os
 import re
 from collections.abc import Iterator, AsyncIterator
 from threading import Lock
-from typing import Any, Callable, Type
+from typing import Any, Callable, Type, Union
 
 import orjson
 from cachetools import TTLCache
@@ -52,6 +52,8 @@ from nomad.app.v1.routers.uploads import (
     RawDirPagination,
 )
 from nomad.archive import ArchiveList, ArchiveDict, to_json
+from nomad.archive.storage_v2 import ArchiveDict as ArchiveDictNew
+from nomad.archive.storage_v2 import ArchiveList as ArchiveListNew
 from nomad.datamodel import ServerContext, User, EntryArchive, Dataset
 from nomad.datamodel.util import parse_path
 from nomad.files import UploadFiles, RawPathInfo
@@ -78,11 +80,17 @@ from nomad.metainfo import (
     Definition,
     Section,
 )
-from nomad.metainfo.data_type import Any as AnyType, JSON
+from nomad.metainfo.data_type import Any as AnyType, JSON, Datatype
 from nomad.metainfo.util import split_python_definition, MSubSectionList
 from nomad.processing import Entry, Upload, ProcessStatus
+from nomad.utils import timer
 
 logger = utils.get_logger(__name__)
+
+# bug when used in isinstance() with mypy
+# see https://github.com/python/mypy/issues/11673
+GenericList = Union[list, ArchiveList, ArchiveListNew]
+GenericDict = Union[dict, ArchiveDict, ArchiveDictNew]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -103,15 +111,15 @@ class Token:
     USER = 'user'
     USERS = 'users'
     DATASET = 'dataset'
-    DATASETS = 'm_datasets'
+    DATASETS = 'datasets'
     GROUP = 'group'
     GROUPS = 'groups'
     METAINFO = 'metainfo'
     SEARCH = 'search'
-    ERROR = 'm_errors'
     METADATA = 'metadata'
     MAINFILE = 'mainfile'
     RESPONSE = 'm_response'
+    ERROR = 'm_errors'
 
 
 @dataclasses.dataclass(frozen=True)
@@ -168,6 +176,8 @@ async def goto_child(container, key: str | int | list):
 
 
 async def async_get(container, key, default=None):
+    return container.get(key, default)
+
     if isinstance(container, dict):
         return container.get(key, default)
 
@@ -175,9 +185,52 @@ async def async_get(container, key, default=None):
 
 
 async def async_to_json(data):
+    return to_json(data)
+
     return await asyncio.to_thread(to_json, data)
 
 
+class LazyUserWrapper:
+    def __init__(self, user_id: str):
+        self.user_id = user_id
+        self.user = None
+        self.requested = False
+
+    def _resolve(self):
+        if not self.requested:
+            self.requested = True
+
+            try:
+                self.user = User.get(user_id=self.user_id)
+            except Exception:  # noqa
+                self.user = self.user_id
+
+            if self.user is None:
+                self.user = self.user_id
+            else:
+                self.user = self.user.m_to_dict(
+                    with_out_meta=True, include_derived=True
+                )
+
+        return self.user
+
+    def __getitem__(self, item):
+        self._resolve()
+        return self.user.__getitem__(item)
+
+    def __iter__(self):
+        self._resolve()
+        return self.user.__iter__()
+
+    def __len__(self):
+        self._resolve()
+        return self.user.__len__()
+
+    def to_json(self):
+        return self._resolve()
+
+
+# todo: set slots=True when 3.10 is the minimum version
 @dataclasses.dataclass(frozen=True)
 class GraphNode:
     upload_id: str  # the upload id of the current node
@@ -405,6 +458,11 @@ def _convert_ref_to_path_string(ref: str, upload_id: str = None) -> str:
 
 def _to_response_config(config: RequestConfig, exclude: list = None, **kwargs):
     response_config = config.dict(exclude_unset=True, exclude_none=True)
+
+    for item in ('include', 'exclude'):
+        if isinstance(x := response_config.pop(item, None), frozenset):
+            response_config[item] = list(x)
+
     response_config.pop('property_name', None)
     if exclude:
         for item in exclude:
@@ -476,22 +534,23 @@ async def _populate_result(
         _merge_dict(container_root, value)
         return
 
-    path_stack: list = list(reversed(path))
     target_container: dict | list = container_root
     key_or_index: None | str | int = None
 
-    while len(path_stack) > 0:
+    stack_idx: int = 0
+    while stack_idx < len(path):
         if key_or_index is not None:
             target_container = _set_default(target_container, key_or_index, dict)
-        key_or_index = path_stack.pop()
+        key_or_index = path[stack_idx]
+        stack_idx += 1
         if path_like:
             continue
-        while len(path_stack) > 0 and path_stack[-1].isdigit():
+        while stack_idx < len(path) and path[stack_idx].isdigit():
             target_container = _set_default(target_container, key_or_index, list)
-            key_or_index = int(path_stack.pop())
-            target_container.extend(  # type: ignore
-                [None] * max(key_or_index - len(target_container) + 1, 0)
-            )
+            key_or_index = int(path[stack_idx])
+            if (extra_element := max(key_or_index - len(target_container) + 1, 0)) > 0:
+                target_container.extend([None] * extra_element)  # type: ignore
+            stack_idx += 1
 
     # the target container does not necessarily have to be a dict or a list
     # if the result is striped due to large size, it will be replaced by a string
@@ -912,7 +971,8 @@ class GeneralReader:
 
         return user.m_to_dict(with_out_meta=True, include_derived=True)
 
-    async def _overwrite_group(self, item: UserGroup):
+    @staticmethod
+    async def _overwrite_group(item: UserGroup):
         # todo: this is a quick dirty fix to convert the group object to a dictionary
         # todo: it shall be formalised in the future
         group_dict = item.to_mongo().to_dict()
@@ -920,9 +980,9 @@ class GeneralReader:
 
         # to be consistent with the other parts
         # all user ids are resolved to user objects
-        group_dict['owner'] = await self.retrieve_user(group_dict['owner'])
+        group_dict['owner'] = LazyUserWrapper(group_dict['owner'])
         group_dict['members'] = [
-            await self.retrieve_user(member) for member in group_dict['members']
+            LazyUserWrapper(member) for member in group_dict['members']
         ]
 
         return group_dict
@@ -951,7 +1011,8 @@ class GeneralReader:
 
         return await self._overwrite_group(group)
 
-    async def _overwrite_upload(self, item: Upload):
+    @staticmethod
+    async def _overwrite_upload(item: Upload):
         plain_dict = orjson.loads(upload_to_pydantic(item).json())
         if n_entries := plain_dict.pop('entries', None):
             plain_dict['n_entries'] = n_entries
@@ -961,10 +1022,10 @@ class GeneralReader:
         )
 
         if main_author := plain_dict.pop('main_author', None):
-            plain_dict['main_author'] = await self.retrieve_user(main_author)
+            plain_dict['main_author'] = LazyUserWrapper(main_author)
         for name in ('coauthors', 'reviewers', 'viewers', 'writers'):
             if (items := plain_dict.pop(name, None)) is not None:
-                plain_dict[name] = [await self.retrieve_user(item) for item in items]
+                plain_dict[name] = [LazyUserWrapper(item) for item in items]
 
         return plain_dict
 
@@ -1558,7 +1619,14 @@ class MongoReader(GeneralReader):
                 reader_cls: Type[GeneralReader], *args, read_list=False
             ):
                 try:
-                    with reader_cls(value, **offload_pack) as reader:
+                    with (
+                        reader_cls(value, **offload_pack) as reader,
+                        timer(
+                            logger,
+                            '/'.join(node.current_path + [key]),
+                            reader_type=reader_cls.__name__,
+                        ),
+                    ):
                         await _populate_result(
                             node.result_root,
                             node.current_path + [key],
@@ -1785,13 +1853,20 @@ class MongoReader(GeneralReader):
         ):
             offload_reader = __M_SEARCHABLE__[node.current_path[-2]]
             try:
-                with offload_reader(
-                    config,
-                    user=self.user,
-                    init=False,
-                    config=config,
-                    global_root=self.global_root,
-                ) as reader:
+                with (
+                    offload_reader(
+                        config,
+                        user=self.user,
+                        init=False,
+                        config=config,
+                        global_root=self.global_root,
+                    ) as reader,
+                    timer(
+                        logger,
+                        '/'.join(node.current_path),
+                        reader_type=offload_reader.__name__,
+                    ),
+                ):
                     await _populate_result(
                         node.result_root,
                         node.current_path,
@@ -2062,7 +2137,7 @@ class ElasticSearchReader(EntryReader):
 
 class UserReader(MongoReader):
     # noinspection PyMethodOverriding
-    async def read(self, user_id: str):  # type: ignore
+    async def read(self, user_id_or_dict: str | dict | LazyUserWrapper):  # type: ignore
         response: dict = {}
 
         if self.global_root is None:
@@ -2071,10 +2146,24 @@ class UserReader(MongoReader):
         else:
             has_global_root = True
 
-        if user_id == 'me':
-            user_id = self.user.user_id
+        if isinstance(user_id_or_dict, LazyUserWrapper):
+            user_id_or_dict = user_id_or_dict.to_json()
 
-        if isinstance(target_user := await self.retrieve_user(user_id), str):
+        target_user: str | dict
+        if isinstance(user_id_or_dict, dict):
+            target_user = user_id_or_dict
+            user_id: str = target_user['user_id']
+        elif isinstance(user_id_or_dict, str):
+            if user_id_or_dict == 'me':
+                user_id = self.user.user_id
+            else:
+                user_id = user_id_or_dict
+            target_user = await self.retrieve_user(user_id)
+        else:
+            # should not reach here
+            raise NotImplementedError
+
+        if isinstance(target_user, str):
             # does not exist
             self._log(
                 f'User ID {user_id} does not exist.', error_type=QueryError.NOTFOUND
@@ -2472,14 +2561,14 @@ class ArchiveReader(ArchiveLikeReader):
     def __if_strip(node: GraphNode, config: RequestConfig, *, depth_check: bool = True):
         if (
             config.max_list_size is not None
-            and isinstance(node.archive, list)
+            and isinstance(node.archive, GenericList)  # type: ignore
             and len(node.archive) > config.max_list_size
         ):
             return True
 
         if (
             config.max_dict_size is not None
-            and isinstance(node.archive, dict)
+            and isinstance(node.archive, GenericDict)  # type: ignore
             and len(node.archive) > config.max_dict_size
         ):
             return True
@@ -2582,13 +2671,20 @@ class ArchiveReader(ArchiveLikeReader):
                         f'Only support "m_def" token on sections, try defining "m_def" request on the parent.'
                     )
                     continue
-                with DefinitionReader(
-                    value,
-                    user=self.user,
-                    init=False,
-                    config=current_config,
-                    global_root=self.global_root,
-                ) as reader:
+                with (
+                    DefinitionReader(
+                        value,
+                        user=self.user,
+                        init=False,
+                        config=current_config,
+                        global_root=self.global_root,
+                    ) as reader,
+                    timer(
+                        logger,
+                        '/'.join(node.current_path + [Token.DEF]),
+                        reader_type='DefinitionReader',
+                    ),
+                ):
                     await _populate_result(
                         node.result_root,
                         node.current_path + [Token.DEF],
@@ -2621,11 +2717,7 @@ class ArchiveReader(ArchiveLikeReader):
                 )
                 continue
 
-            from nomad.archive.storage_v2 import ArchiveList as ArchiveListNew
-
-            is_list: bool = isinstance(
-                child_archive, (list, ArchiveList, ArchiveListNew)
-            )
+            is_list: bool = isinstance(child_archive, GenericList)  # type: ignore
 
             if (
                 is_list
@@ -2682,9 +2774,19 @@ class ArchiveReader(ArchiveLikeReader):
         Those come from explicitly given fields in the required query.
         They are handled by the caller.
         """
-        from nomad.archive.storage_v2 import ArchiveList as ArchiveListNew
-
-        if isinstance(node.archive, (list, ArchiveList, ArchiveListNew)):
+        if isinstance(node.archive, GenericList):  # type: ignore
+            if (
+                isinstance(node.definition, Quantity)
+                and isinstance(node.definition.type, Datatype)
+                and config.index is None
+            ):
+                return await _populate_result(
+                    node.result_root,
+                    node.current_path,
+                    f'__INTERNAL__:{node.generate_reference()}'
+                    if self.__if_strip(node, config)
+                    else node.archive,
+                )
             return await self._resolve_list(node, config)
 
         # no matter if to resolve, it is always necessary to replace the definition with potential custom definition
@@ -2694,17 +2796,14 @@ class ArchiveReader(ArchiveLikeReader):
             node, config, implicit_resolve=omit_keys is not None
         )
 
-        from nomad.archive.storage_v2 import ArchiveDict as ArchiveDictNew
-
-        if not isinstance(node.archive, (dict, ArchiveDict, ArchiveDictNew)):
+        if not isinstance(node.archive, GenericDict):  # type: ignore
             # primitive type data is always included
             # this is not affected by size limit nor by depth limit
-            await _populate_result(
+            return await _populate_result(
                 node.result_root,
                 node.current_path,
                 await self._apply_resolver(node, config),
             )
-            return
 
         if isinstance(node.definition, Quantity) or isinstance(
             getattr(node.definition, 'type', None), (JSON, AnyType)
@@ -2749,17 +2848,24 @@ class ArchiveReader(ArchiveLikeReader):
                     )
                     continue
 
-                await self._resolve(
-                    child_node,
-                    config.new(
-                        {
-                            'property_name': key,  # set the proper quantity name
-                            'include': ['*'],  # ignore the pattern for children
-                            'exclude': None,
-                            'index': None,  # ignore index requirements for children
-                        }
-                    ),
+                child_config = config.new(
+                    {
+                        'property_name': key,  # set the proper quantity name
+                        'include': ['*'],  # ignore the pattern for children
+                        'exclude': None,
+                        'index': None,  # ignore index requirements for children
+                    }
                 )
+
+                # todo: this shortcircuit most likely yields incorrect response
+                # todo: since any potential references are not rewritten
+                # todo: this is thus disabled for the moment
+                if child_config.is_plain() and False:
+                    await _populate_result(
+                        node.result_root, child_node.current_path, child_node.archive
+                    )
+                else:
+                    await self._resolve(child_node, child_config)
 
     async def _check_definition(
         self, node: GraphNode, config: RequestConfig
@@ -2768,9 +2874,8 @@ class ArchiveReader(ArchiveLikeReader):
         Check the existence of custom definition.
         If positive, overwrite the corresponding information of the current node.
         """
-        from nomad.archive.storage_v2 import ArchiveDict as ArchiveDictNew
 
-        if not isinstance(node.archive, (dict, ArchiveDict, ArchiveDictNew)):
+        if not isinstance(node.archive, GenericDict):  # type: ignore
             return node
 
         async def __if_contains(m_def):
@@ -2786,13 +2891,20 @@ class ArchiveReader(ArchiveLikeReader):
                 if isinstance(definition, SubSection):
                     definition = definition.sub_section.m_resolved()
                 if not await __if_contains(definition):
-                    with DefinitionReader(
-                        RequestConfig(directive=DirectiveType.plain),
-                        user=self.user,
-                        init=False,
-                        config=config,
-                        global_root=self.global_root,
-                    ) as reader:
+                    with (
+                        DefinitionReader(
+                            RequestConfig(directive=DirectiveType.plain),
+                            user=self.user,
+                            init=False,
+                            config=config,
+                            global_root=self.global_root,
+                        ) as reader,
+                        timer(
+                            logger,
+                            '/'.join(node.current_path + [Token.DEF]),
+                            reader_type='DefinitionReader',
+                        ),
+                    ):
                         await _populate_result(
                             node.result_root,
                             node.current_path + [Token.DEF],
@@ -2812,13 +2924,20 @@ class ArchiveReader(ArchiveLikeReader):
             config.include_definition is not DefinitionType.none
             and not await __if_contains(new_def)
         ):
-            with DefinitionReader(
-                RequestConfig(directive=DirectiveType.plain),
-                user=self.user,
-                init=False,
-                config=config,
-                global_root=self.global_root,
-            ) as reader:
+            with (
+                DefinitionReader(
+                    RequestConfig(directive=DirectiveType.plain),
+                    user=self.user,
+                    init=False,
+                    config=config,
+                    global_root=self.global_root,
+                ) as reader,
+                timer(
+                    logger,
+                    '/'.join(node.current_path + [Token.DEF]),
+                    reader_type='DefinitionReader',
+                ),
+            ):
                 await _populate_result(
                     node.result_root,
                     node.current_path + [Token.DEF],
