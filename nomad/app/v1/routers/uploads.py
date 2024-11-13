@@ -1170,11 +1170,14 @@ async def get_upload_raw_path(
             # File
             if files_params.compress:
                 media_type = 'application/zip'
-                download_item = DownloadItem(
-                    upload_id=upload_id, raw_path=path, zip_path=os.path.basename(path)
-                )
                 content = create_download_stream_zipped(
-                    download_item, upload_files, compress=True
+                    DownloadItem(
+                        upload_id=upload_id,
+                        raw_path=path,
+                        zip_path=os.path.basename(path),
+                    ),
+                    upload_files,
+                    compress=True,
                 )
             else:
                 if offset < 0:
@@ -1220,19 +1223,15 @@ async def get_upload_raw_path(
                     ),
                 )
             # Stream directory content, compressed.
-            download_item = DownloadItem(
-                upload_id=upload_id, raw_path=path, zip_path=''
-            )
-            content = create_download_stream_zipped(
-                download_item,
-                upload_files,
-                re_pattern=files_params.re_pattern,
-                recursive=True,
-                create_manifest_file=False,
-                compress=True,
-            )
             return StreamingResponse(
-                content,
+                create_download_stream_zipped(
+                    DownloadItem(upload_id=upload_id, raw_path=path, zip_path=''),
+                    upload_files,
+                    re_pattern=files_params.re_pattern,
+                    recursive=True,
+                    create_manifest_file=False,
+                    compress=True,
+                ),
                 headers=browser_download_headers(
                     (
                         upload.upload_id

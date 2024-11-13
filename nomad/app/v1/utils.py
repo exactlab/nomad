@@ -94,14 +94,14 @@ class DownloadItem(BaseModel):
     entry_metadata: Optional[Dict[str, Any]]
 
 
-def create_download_stream_zipped(
+async def create_download_stream_zipped(
     download_items: Union[DownloadItem, Iterator[DownloadItem]],
     upload_files: UploadFiles = None,
     re_pattern: Any = None,
     recursive: bool = False,
     create_manifest_file: bool = False,
     compress: bool = True,
-) -> Iterator[bytes]:
+):
     """
     Creates a zip-file stream for downloading raw data with ``StreamingResponse``.
 
@@ -184,16 +184,17 @@ def create_download_stream_zipped(
             if upload_files:
                 upload_files.close()
 
-    return create_zipstream(streamed_files(upload_files), compress=compress)
+    for x in create_zipstream(streamed_files(upload_files), compress=compress):
+        yield x
 
 
-def create_download_stream_raw_file(
+async def create_download_stream_raw_file(
     upload_files: UploadFiles,
     path: str,
     offset: int = 0,
     length: int = -1,
     decompress=False,
-) -> Iterator[bytes]:
+):
     """
     Creates a file stream for downloading raw data with ``StreamingResponse``.
 
@@ -222,20 +223,10 @@ def create_download_stream_raw_file(
 
     if length > 0:
         # Read up to a certain number of bytes
-        remaining = length
-        while remaining:
-            content = raw_file.read(remaining)
-            content_length = len(content)
-            remaining -= content_length
-            if content_length == 0:
-                break  # No more bytes
-            yield content
+        yield raw_file.read(length)
     else:
         # Read until the end of the file.
-        while True:
-            content = raw_file.read(1024 * 64)
-            if not content:
-                break  # No more bytes
+        while content := raw_file.read(1024 * 1024):
             yield content
 
     raw_file.close()

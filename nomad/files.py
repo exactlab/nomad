@@ -588,34 +588,39 @@ def create_zipstream_content(streamed_files: Iterable[StreamedFile]) -> Iterable
     the form which is required by the `zipstream` library, i.e. dictionaries with keys
     `arcname`, `iterable` and `buffer_size`. Useful for generating zipstreams.
     """
+
+    def content_generator(file):
+        with file.f as f:
+            while data := f.read(1024 * 1024):
+                yield data
+
     for streamed_file in streamed_files:
-
-        def content_generator():
-            with streamed_file.f as f:
-                while True:
-                    data = f.read(1024 * 64)
-                    if not data:
-                        break
-                    yield data
-
         yield dict(
             arcname=streamed_file.path,
-            iterable=content_generator(),
+            iterable=content_generator(streamed_file),
             buffer_size=streamed_file.size,
         )
 
 
-def create_zipstream(
-    streamed_files: Iterable[StreamedFile], compress: bool = False
-) -> Iterator[bytes]:
+def create_zipstream(streamed_files: Iterable[StreamedFile], compress: bool = False):
     """
     Creates a zip stream, i.e. a streamed zip file.
     """
-    compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
-    zip_stream = zipstream.ZipFile(mode='w', compression=compression, allowZip64=True)
+    zip_stream = zipstream.ZipFile(
+        mode='w',
+        compression=zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED,
+        allowZip64=True,
+    )
     zip_stream.paths_to_write = create_zipstream_content(streamed_files)
 
-    return iter(zip_stream)
+    yield from zip_stream
+
+
+async def create_zipstream_async(
+    streamed_files: Iterable[StreamedFile], compress: bool = False
+):
+    for x in create_zipstream(streamed_files, compress):
+        yield x
 
 
 def _versioned_archive_file_object(
@@ -661,6 +666,12 @@ class UploadFiles(DirectoryObject, metaclass=ABCMeta):
             raise KeyError(upload_id)
 
         self.upload_id = upload_id
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
 
     @classmethod
     def file_area(cls):

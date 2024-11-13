@@ -29,7 +29,7 @@ from fastapi import (
     Query as QueryParameter,
     Body,
 )
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, ORJSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field, validator
 import os.path
@@ -46,7 +46,7 @@ from nomad.config import config
 from nomad.config.models.config import Reprocess
 from nomad.datamodel import EditableUserMetadata
 from nomad.datamodel.context import ServerContext
-from nomad.files import StreamedFile, create_zipstream
+from nomad.files import StreamedFile, create_zipstream_async
 from nomad.processing.data import Upload
 from nomad.utils import strip
 from nomad.archive import RequiredReader, RequiredValidationError, ArchiveQueryError
@@ -726,16 +726,14 @@ def _answer_entries_raw_request(owner: Owner, query: Query, files: Files, user: 
                     entry_metadata=entry_metadata,
                 )
 
-        # create the streaming response with zip file contents
-        content = create_download_stream_zipped(
-            download_items=download_items_generator(),
-            re_pattern=files_params.re_pattern,
-            recursive=False,
-            create_manifest_file=True,
-            compress=files_params.compress,
-        )
         return StreamingResponse(
-            content,
+            create_download_stream_zipped(
+                download_items=download_items_generator(),
+                re_pattern=files_params.re_pattern,
+                recursive=False,
+                create_manifest_file=True,
+                compress=files_params.compress,
+            ),
             headers=browser_download_headers(
                 filename='raw_files.zip', media_type='application/zip'
             ),
@@ -1104,10 +1102,8 @@ def _answer_entries_archive_download_request(
         )
 
     with _Uploads() as uploads:
-        # create the streaming response with zip file contents
-        content = create_zipstream(streamed_files(), compress=files_params.compress)
         return StreamingResponse(
-            content,
+            create_zipstream_async(streamed_files(), compress=files_params.compress),
             headers=browser_download_headers(
                 filename='archives.zip', media_type='application/zip'
             ),
@@ -1361,14 +1357,14 @@ async def get_entry_raw_file(
     if offset == 0 and length < 0:
         mime_type = upload_files.raw_file_mime_type(path)
 
-    raw_file_content = create_download_stream_raw_file(
-        upload_files, path, offset, length, decompress
+    return StreamingResponse(
+        create_download_stream_raw_file(upload_files, path, offset, length, decompress),
+        media_type=mime_type,
     )
-    return StreamingResponse(raw_file_content, media_type=mime_type)
 
 
 def answer_entry_archive_request(
-    query: Dict[str, Any], required: ArchiveRequired, user: User, entry_metadata=None
+    query: dict, required: ArchiveRequired, user: User, entry_metadata=None
 ):
     required_reader = _validate_required(required, user)
 
@@ -1392,25 +1388,23 @@ def answer_entry_archive_request(
 
     with _Uploads() as uploads:
         try:
-            archive_data = _read_archive(entry_metadata, uploads, required_reader)[
-                'archive'
-            ]
+            return {
+                'entry_id': entry_id,
+                'required': required,
+                'data': {
+                    'entry_id': entry_id,
+                    'upload_id': entry_metadata['upload_id'],
+                    'parser_name': entry_metadata['parser_name'],
+                    'archive': _read_archive(entry_metadata, uploads, required_reader)[
+                        'archive'
+                    ],
+                },
+            }
         except KeyError:
             raise HTTPException(
                 status.HTTP_404_NOT_FOUND,
                 detail='The entry does exist, but it has no archive.',
             )
-
-        return {
-            'entry_id': entry_id,
-            'required': required,
-            'data': {
-                'entry_id': entry_id,
-                'upload_id': entry_metadata['upload_id'],
-                'parser_name': entry_metadata['parser_name'],
-                'archive': archive_data,
-            },
-        }
 
 
 @router.post(
@@ -1563,8 +1557,8 @@ async def get_entry_archive(
     """
     Returns the full archive for the given `entry_id`.
     """
-    return answer_entry_archive_request(
-        dict(entry_id=entry_id), required='*', user=user
+    return ORJSONResponse(
+        answer_entry_archive_request(dict(entry_id=entry_id), required='*', user=user)
     )
 
 
@@ -1579,14 +1573,6 @@ async def get_entry_archive_download(
         ...,
         description='The unique entry id of the entry to retrieve archive data from.',
     ),
-    ignore_mime_type: bool = QueryParameter(
-        False,
-        description=strip(
-            """
-                Sets the mime type specified in the response headers to `application/octet-stream`
-                instead of the actual mime type (i.e. `application/json`)."""
-        ),
-    ),
     user: User = Depends(create_user_dependency(signature_token_auth_allowed=True)),
 ):
     """
@@ -1595,16 +1581,7 @@ async def get_entry_archive_download(
     response = answer_entry_archive_request(
         dict(entry_id=entry_id), required='*', user=user
     )
-    archive = response['data']['archive']
-    return StreamingResponse(
-        io.BytesIO(json.dumps(archive, indent=2).encode()),
-        headers=browser_download_headers(
-            filename=f'{entry_id}.json',
-            media_type='application/octet-stream'
-            if ignore_mime_type
-            else 'application/json',
-        ),
-    )
+    return ORJSONResponse(response['data']['archive'])
 
 
 @router.post(
@@ -1628,8 +1605,10 @@ async def post_entry_archive_query(
     Returns a partial archive for the given `entry_id` based on the `required` specified
     in the body.
     """
-    return answer_entry_archive_request(
-        dict(entry_id=entry_id), required=data.required, user=user
+    return ORJSONResponse(
+        answer_entry_archive_request(
+            dict(entry_id=entry_id), required=data.required, user=user
+        )
     )
 
 
