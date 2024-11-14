@@ -102,7 +102,7 @@ class BundleExporter:
             ), 'You must specify either `export_as_stream = True` or `export_path`.'
             assert self.overwrite or not os.path.exists(
                 self.export_path
-            ), '`export_path` alredy exists.'
+            ), '`export_path` already exists.'
         assert (
             not self.upload.process_running
             or self.upload.current_process == 'publish_externally'
