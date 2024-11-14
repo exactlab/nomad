@@ -910,6 +910,7 @@ async def _answer_entries_archive_request(
     pagination: MetadataPagination,
     required: ArchiveRequired,
     user: User,
+    populate_url: bool = False,
 ):
     if owner == Owner.all_:
         raise HTTPException(
@@ -957,13 +958,18 @@ async def _answer_entries_archive_request(
 
         logger.info('read all archives', endpoint='entries/archive')
 
-    return EntriesArchiveResponse(
+    response = EntriesArchiveResponse(
         owner=search_response.owner,
         query=search_response.query,
         pagination=search_response.pagination,
         required=required,
-        data=list(filter(None, response_data)),
     )
+    if populate_url:
+        response.pagination.populate_urls(request)
+    result = response.dict(exclude_none=True)
+    result['data'] = list(filter(None, response_data))
+
+    return ORJSONResponse(result)
 
 
 _entries_archive_docstring = strip(
@@ -1017,16 +1023,15 @@ async def get_entries_archive_query(
     pagination: MetadataPagination = Depends(metadata_pagination_parameters),
     user: User = Depends(create_user_dependency()),
 ):
-    res = await _answer_entries_archive_request(
+    return await _answer_entries_archive_request(
         request=request,
         owner=with_query.owner,
         query=with_query.query,
         pagination=pagination,
         required=None,
         user=user,
+        populate_url=True,
     )
-    res.pagination.populate_urls(request)
-    return res
 
 
 def _answer_entries_archive_download_request(
