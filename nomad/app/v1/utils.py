@@ -233,9 +233,10 @@ async def create_download_stream_raw_file(
     upload_files.close()
 
 
-def create_stream_from_string(content: str) -> io.BytesIO:
+async def create_stream_from_string(content: str):
     """For returning strings as content using"""
-    return io.BytesIO(content.encode())
+    for x in io.BytesIO(content.encode()):
+        yield x
 
 
 def create_responses(*args):

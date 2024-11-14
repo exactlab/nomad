@@ -567,7 +567,7 @@ async def get_entries_metadata(
     return res
 
 
-def _do_exaustive_search(
+def _do_exhaustive_search(
     owner: Owner, query: Query, include: List[str], user: User
 ) -> Iterator[Dict[str, Any]]:
     page_after_value = None
@@ -646,7 +646,7 @@ def _answer_entries_rawdir_request(
 ):
     if owner == Owner.all_:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_401_UNAUTHORIZED,
             detail=strip(
                 """
             The owner=all is not allowed for this operation as it will search for entries
@@ -680,7 +680,7 @@ def _answer_entries_rawdir_request(
 def _answer_entries_raw_request(owner: Owner, query: Query, files: Files, user: User):
     if owner == Owner.all_:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_401_UNAUTHORIZED,
             detail=strip(
                 """
             The owner=all is not allowed for this operation as it will search for entries
@@ -699,7 +699,7 @@ def _answer_entries_raw_request(owner: Owner, query: Query, files: Files, user: 
 
     if response.pagination.total > config.services.max_entry_download:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status.HTTP_400_BAD_REQUEST,
             detail='The limit of maximum number of entries in a single download (%d) has been exeeded (%d).'
             % (config.services.max_entry_download, response.pagination.total),
         )
@@ -711,7 +711,7 @@ def _answer_entries_raw_request(owner: Owner, query: Query, files: Files, user: 
         # a generator of File objects to create the streamed zip from
         def download_items_generator():
             # go through all entries that match the query
-            for entry_metadata in _do_exaustive_search(
+            for entry_metadata in _do_exhaustive_search(
                 owner, query, include=search_includes, user=user
             ):
                 upload_id = entry_metadata['upload_id']
@@ -913,7 +913,7 @@ async def _answer_entries_archive_request(
 ):
     if owner == Owner.all_:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_401_UNAUTHORIZED,
             detail=strip(
                 """The owner=all is not allowed for this operation as it will search for entries
                 that you might now be allowed to access."""
@@ -1034,7 +1034,7 @@ def _answer_entries_archive_download_request(
 ):
     if owner == Owner.all_:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_401_UNAUTHORIZED,
             detail=strip(
                 """
             The owner=all is not allowed for this operation as it will search for entries
@@ -1055,7 +1055,7 @@ def _answer_entries_archive_download_request(
 
     if response.pagination.total > config.services.max_entry_download:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status.HTTP_400_BAD_REQUEST,
             detail=f'The limit of maximum number of entries in a single download'
             f' ({config.services.max_entry_download}) has been exceeded ({response.pagination.total}).',
         )
@@ -1068,7 +1068,7 @@ def _answer_entries_archive_download_request(
     # a generator of StreamedFile objects to create the zipstream from
     def streamed_files():
         # go through all entries that match the query
-        for entry_metadata in _do_exaustive_search(
+        for entry_metadata in _do_exhaustive_search(
             owner, query, include=search_includes, user=user
         ):
             path = os.path.join(
@@ -1195,7 +1195,7 @@ async def get_entry_metadata(
 
     if response.pagination.total == 0:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status.HTTP_404_NOT_FOUND,
             detail='The entry with the given id does not exist or is not visible to you.',
         )
 
@@ -1231,7 +1231,7 @@ async def get_entry_rawdir(
 
     if response.pagination.total == 0:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status.HTTP_404_NOT_FOUND,
             detail='The entry with the given id does not exist or is not visible to you.',
         )
 
@@ -1268,7 +1268,7 @@ async def get_entry_raw(
 
     if response.pagination.total == 0:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status.HTTP_404_NOT_FOUND,
             detail='The entry with the given id does not exist or is not visible to you.',
         )
 
@@ -1334,7 +1334,7 @@ async def get_entry_raw_file(
 
     if response.pagination.total == 0:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status.HTTP_404_NOT_FOUND,
             detail='The entry with the given id does not exist or is not visible to you.',
         )
 
@@ -1348,7 +1348,7 @@ async def get_entry_raw_file(
 
     if not upload_files.raw_path_exists(path):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status.HTTP_404_NOT_FOUND,
             detail='The requested file does not exist.',
         )
     # We only provide a specific mime-type, if the whole file is requested. Otherwise,
@@ -1378,7 +1378,7 @@ def answer_entry_archive_request(
 
         if response.pagination.total == 0:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status.HTTP_404_NOT_FOUND,
                 detail='The entry does not exist or is not visible to you.',
             )
 
@@ -1437,7 +1437,7 @@ async def post_entry_edit(
 
     if response.pagination.total == 0:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status.HTTP_404_NOT_FOUND,
             detail='The entry with the given id does not exist or is not visible to you.',
         )
 
@@ -1451,13 +1451,13 @@ async def post_entry_edit(
 
     if not (is_admin or is_writer):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_401_UNAUTHORIZED,
             detail='Not enough permissions to execute edit request.',
         )
 
     if entry_data.get('published', False):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status.HTTP_400_BAD_REQUEST,
             detail='Editing is only allowed for non published entries.',
         )
 
@@ -1473,7 +1473,7 @@ async def post_entry_edit(
             archive_data = yaml.load(f, Loader=yaml.SafeLoader)
         else:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status.HTTP_400_BAD_REQUEST,
                 detail='The entry mainfile in not in archive format.',
             )
 
@@ -1619,7 +1619,7 @@ def edit(
     entry_ids: List[str] = []
     upload_ids: Set[str] = set()
     with utils.timer(logger, 'edit query executed'):
-        all_entries = _do_exaustive_search(
+        all_entries = _do_exhaustive_search(
             owner=Owner.user, query=query, include=['entry_id', 'upload_id'], user=user
         )
 
@@ -1721,7 +1721,7 @@ async def post_entry_metadata_edit(
             quantity = _editable_quantities.get(action_quantity_name)
             if quantity is None:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                    status.HTTP_400_BAD_REQUEST,
                     detail='Unknown quantity %s' % action_quantity_name,
                 )
 
@@ -1731,13 +1731,13 @@ async def post_entry_metadata_edit(
             if action_quantity_name in ['main_author', 'upload_create_time']:
                 if not user.is_admin():
                     raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
+                        status.HTTP_400_BAD_REQUEST,
                         detail='Only the admin user can set %s' % quantity.name,
                     )
 
             if isinstance(quantity_actions, list) == quantity.is_scalar:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                    status.HTTP_400_BAD_REQUEST,
                     detail='Wrong shape for quantity %s' % action_quantity_name,
                 )
 
@@ -1759,7 +1759,7 @@ async def post_entry_metadata_edit(
 
                 if action_quantity_name == 'with_embargo':
                     raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
+                        status.HTTP_400_BAD_REQUEST,
                         detail='Updating the embargo flag on entry level is no longer allowed.',
                     )
 
@@ -1913,4 +1913,4 @@ async def post_entries_edit(
         raise  # A problem which we have handled explicitly. Fastapi does json conversion.
     except Exception as e:
         # The upload is processing or some kind of unexpected error has occured
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
