@@ -43,6 +43,11 @@ const nPointsOptions = {
   1000: 1000,
   10000: 10000
 }
+const dragModeOptions = {
+  'zoom': 'zoom',
+  'pan': 'pan',
+  'select': 'select'
+}
 /**
  * A dialog that is used to configure a scatter plot widget.
  */
@@ -271,6 +276,14 @@ export const WidgetScatterPlotEdit = React.memo(({widget}) => {
             fullWidth
             value={settings?.title}
             onChange={(event) => handleChange('title', event.target.value)}
+          />
+        </WidgetEditOption>
+        <WidgetEditOption>
+          <WidgetEditSelect
+            label="Action to perform on mouse drag"
+            options={dragModeOptions}
+            value={settings.drag_mode}
+            onChange={(event) => { handleChange('drag_mode', event.target.value) }}
           />
         </WidgetEditOption>
         <WidgetEditOption>

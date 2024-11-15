@@ -109,6 +109,7 @@ const Dashboard = React.memo(() => {
       },
       size: 1000,
       autorange: true,
+      drag_mode: 'zoom',
       type: 'scatter_plot'
     }
     addWidget(id, value)

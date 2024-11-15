@@ -9914,6 +9914,7 @@ window.nomadEnv = {
                     }
                   },
                   "size": 1000,
+                  "drag_mode": "zoom",
                   "autorange": true
                 },
                 {
@@ -9976,6 +9977,7 @@ window.nomadEnv = {
                     }
                   },
                   "size": 1000,
+                  "drag_mode": "zoom",
                   "autorange": true
                 },
                 {

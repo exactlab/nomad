@@ -30,9 +30,8 @@ import { Widget, schemaWidget, schemaAxis, schemaMarkers } from './Widget'
 import { useSearchContext } from '../SearchContext'
 import Floatable from '../../visualization/Floatable'
 import PlotScatter from '../../plotting/PlotScatter'
-import { Action, ActionCheckbox } from '../../Actions'
-import { CropFree, PanTool, Fullscreen, Replay } from '@material-ui/icons'
-import { autorangeDescription } from './WidgetHistogram'
+import { Action } from '../../Actions'
+import { Search, CropFree, PanTool, Fullscreen, Replay } from '@material-ui/icons'
 import { styled } from '@material-ui/core/styles'
 import {DType, parseJMESPath} from '../../../utils'
 import { Quantity } from '../../units/Quantity'
@@ -82,7 +81,7 @@ export const WidgetScatterPlot = React.memo((
   markers,
   size,
   autorange,
-  dragmode,
+  drag_mode,
   className,
   onSelected
 }) => {
@@ -124,8 +123,8 @@ export const WidgetScatterPlot = React.memo((
     }
   }, [error, filterData, markers?.color, x, units, y])
 
-  const setXFilter = useSetFilter(xAxis.search_quantity)
-  const setYFilter = useSetFilter(yAxis.search_quantity)
+  const setXFilter = useSetFilter(xParsed.quantity)
+  const setYFilter = useSetFilter(yParsed.quantity)
 
   const setWidget = useSetWidget(id)
   const pagination = useMemo(() => ({
@@ -283,7 +282,7 @@ export const WidgetScatterPlot = React.memo((
 
   const handleDragModeChanged = useCallback((event, value) => {
     if (value !== null) {
-      setWidget(old => ({...old, dragmode: value}))
+      setWidget(old => ({...old, drag_mode: value}))
     }
   }, [setWidget])
 
@@ -318,26 +317,24 @@ export const WidgetScatterPlot = React.memo((
 
   const actions = useMemo(() => {
       return <>
-        <ActionCheckbox
-          tooltip={autorangeDescription}
-          label="autorange"
-          value={autorange}
-          onChange={(value) => setWidget(old => ({...old, autorange: value}))}
-        />
-        <Divider flexItem orientation="vertical" className={styles.divider} />
         <StyledToggleButtonGroup
           size="small"
-          value={dragmode}
+          value={drag_mode}
           exclusive
           onChange={handleDragModeChanged}
         >
+          <ToggleButton value="zoom">
+            <Tooltip title="Zoom">
+              <Search fontSize="small"/>
+            </Tooltip>
+          </ToggleButton>
           <ToggleButton value="pan">
             <Tooltip title="Pan">
               <PanTool fontSize="small"/>
             </Tooltip>
           </ToggleButton>
           <ToggleButton value="select">
-            <Tooltip title="Focus on region">
+            <Tooltip title="Select region to create a filter">
               <CropFree fontSize="small"/>
             </Tooltip>
           </ToggleButton>
@@ -350,7 +347,7 @@ export const WidgetScatterPlot = React.memo((
           <Fullscreen fontSize="small"/>
         </Action>
       </>
-  }, [dragmode, handleDragModeChanged, handleResetClick, handleFloat, autorange, setWidget, styles])
+  }, [drag_mode, handleDragModeChanged, handleResetClick, handleFloat, styles])
 
   const handleNavigated = useCallback(() => {
     setFloat(false)
@@ -382,7 +379,7 @@ export const WidgetScatterPlot = React.memo((
           autorange={autorange}
           onSelected={handleSelected}
           onDeselect={handleDeselect}
-          dragmode={dragmode}
+          dragMode={drag_mode}
           onNavigateToEntry={handleNavigated}
           data-testid={id}
           ref={canvas}
@@ -401,7 +398,7 @@ WidgetScatterPlot.propTypes = {
   markers: PropTypes.object,
   size: PropTypes.number,
   autorange: PropTypes.bool,
-  dragmode: PropTypes.string,
+  drag_mode: PropTypes.string,
   className: PropTypes.string,
   onSelected: PropTypes.func
 }
