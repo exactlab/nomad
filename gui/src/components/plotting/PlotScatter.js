@@ -110,7 +110,7 @@ const PlotScatter = React.memo(forwardRef((
   colorAxis,
   discrete,
   autorange,
-  dragmode,
+  dragMode,
   onSelected,
   onDeselect,
   onNavigateToEntry,
@@ -138,14 +138,14 @@ const PlotScatter = React.memo(forwardRef((
     data.x = transformData(xAxis.dtype, data.x)
     data.y = transformData(yAxis.dtype, data.y)
 
-    const hoverTemplate = (xLabel, yLabel, colorLabel, xUnit, yUnit, colorUnit) => {
+    const hoverTemplate = (xLabel, yLabel, colorLabel) => {
       let template = `<b>Click to go to entry page</b>` +
         `<br>` +
-        `${xLabel || ''}: %{x} ${xUnit === 'dimensionless' ? '' : xUnit}<br>` +
-        `${yLabel || ''}: %{y} ${yUnit === 'dimensionless' ? '' : yUnit}<br>`
+        `${xLabel || ''}: %{x}<br>` +
+        `${yLabel || ''}: %{y}<br>`
       if (colorLabel) {
         template = template +
-          `${colorLabel || ''}: %{${discrete ? 'text' : 'text:.3'}} ${colorUnit === 'dimensionless' ? '' : colorUnit}<br>`
+          `${colorLabel || ''}: %{${discrete ? 'text' : 'text:.3'}}<br>`
       }
       template = template + `<extra></extra>`
       return template
@@ -186,10 +186,7 @@ const PlotScatter = React.memo(forwardRef((
           hovertemplate: hoverTemplate(
             xAxis.title,
             yAxis.title,
-            colorAxis.title,
-            xAxis.unit,
-            yAxis.unit,
-            ''
+            colorAxis.title
           ),
           marker: {
             size: 8,
@@ -217,10 +214,7 @@ const PlotScatter = React.memo(forwardRef((
         hovertemplate: hoverTemplate(
           xAxis.title,
           yAxis.title,
-          colorAxis.title,
-          xAxis.unit,
-          yAxis.unit,
-          colorAxis.unit
+          colorAxis.title
         ),
         marker: {
           size: 8,
@@ -255,9 +249,6 @@ const PlotScatter = React.memo(forwardRef((
         hovertemplate: hoverTemplate(
           xAxis.title,
           yAxis.title,
-          '',
-          xAxis.unit,
-          yAxis.unit,
           ''
         ),
         marker: {
@@ -275,7 +266,7 @@ const PlotScatter = React.memo(forwardRef((
 
   const layout = useMemo(() => {
     return {
-      dragmode: dragmode,
+      dragmode: dragMode,
       hovermode: 'closest',
       hoverlabel: {
         bgcolor: theme.palette.grey[100],
@@ -308,24 +299,7 @@ const PlotScatter = React.memo(forwardRef((
         b: 24
       }
     }
-  // Any further changes to dragmode need to be handled through callbacks in
-  // order to do the layout updates correctly. TODO: The plot component should
-  // have a consistent way for handling layout changes: they should either
-  // happen through a property or through some update function, but not through
-  // both. This is a general problem in trying to 'reactify' a non-react library
-  // like Plotly.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autorange, xAxis.dtype, xAxis.scale, yAxis.dtype, yAxis.scale])
-
-  // Change dragmode
-  useEffect(() => {
-    canvas.current?.relayout && canvas.current.relayout((layout) => {
-      return {
-        ...layout,
-        dragmode
-      }
-    })
-  }, [dragmode, canvas])
+  }, [autorange, xAxis.dtype, xAxis.scale, yAxis.dtype, yAxis.scale, dragMode, theme])
 
   const handleClick = useCallback(d => {
     const pointIndex = d.points[0].pointIndex
@@ -392,7 +366,7 @@ PlotScatter.propTypes = {
   colorAxis: PropTypes.object, // Contains colorbar settings
   discrete: PropTypes.bool,
   autorange: PropTypes.bool,
-  dragmode: PropTypes.string,
+  dragMode: PropTypes.string,
   onSelected: PropTypes.func,
   onDeselect: PropTypes.func,
   onNavigateToEntry: PropTypes.func,

@@ -986,6 +986,12 @@ class WidgetPeriodicTableDeprecated(WidgetPeriodicTable):
         return values
 
 
+class DragModeEnum(str, Enum):
+    ZOOM = 'zoom'
+    PAN = 'pan'
+    SELECT = 'select'
+
+
 class WidgetScatterPlot(Widget):
     """Scatter plot widget configuration."""
 
@@ -1014,6 +1020,10 @@ class WidgetScatterPlot(Widget):
         more or less, depending on how many entries exist and how many of the
         requested values each entry contains.
         """,
+    )
+    drag_mode: str = Field(
+        DragModeEnum.ZOOM,
+        description='Action to perform on mouse drag.',
     )
     autorange: bool = Field(
         True,

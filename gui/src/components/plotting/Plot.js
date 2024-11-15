@@ -505,11 +505,33 @@ const Plot = React.memo(forwardRef(({
         yaxis: {...oldLayout.yaxis, autorange: !hasY, range: hasY ? [...resetInfo.current.rangeY] : oldLayout.yaxis.range},
         yaxis2: {...oldLayout.yaxis2, autorange: !hasY2, range: hasY2 ? [...resetInfo.current.rangeY2] : oldLayout.yaxis2.range}
       }
-      Plotly.relayout(canvasRef.current, layout)
+
+      // Also reset any possible selection
+      delete layout.selections
+      const data = canvasRef.current.data
+      data.forEach(element => {
+        delete element.selectedpoints
+      })
+      Plotly.react(canvasRef.current, data, layout)
+
       fixMargins()
       onReset && onReset()
     }
   }, [canvasRef, onReset, fixMargins, getLayout])
+
+  // For resetting selections
+  const handleDeselect = useCallback(() => {
+    if (canvasRef?.current) {
+      const layout = canvasRef.current.layout
+      delete layout.selections
+      const data = canvasRef.current.data
+      data.forEach(element => {
+        delete element.selectedpoints
+      })
+      Plotly.react(canvasRef.current, data, layout)
+      onDeselect?.()
+    }
+  }, [canvasRef, onDeselect])
 
   // Saves the current layout for recovering the plot
   const saveLayout = useCallback(() => {
@@ -529,25 +551,21 @@ const Plot = React.memo(forwardRef(({
 
   // Listen to keyboard events to deselect.
   useEffect(() => {
-    function handleDeselect(event) {
+    function deselect(event) {
       if (['Escape', 'Delete'].includes(event.key)) {
-        const layout = canvasRef.current.layout
-        delete layout.selections
-        const data = canvasRef.current.data
-        data.forEach(element => {
-          delete element.selectedpoints
-        })
-        Plotly.react(canvasRef.current, data, layout)
-        onDeselect && onDeselect()
+        handleDeselect()
       }
     }
-    window.addEventListener('keydown', handleDeselect)
-    return () => window.removeEventListener('keydown', handleDeselect)
-  }, [canvasRef, onDeselect])
+    window.addEventListener('keydown', deselect)
+    return () => window.removeEventListener('keydown', deselect)
+  }, [canvasRef, onDeselect, handleDeselect])
 
   useImperativeHandle(canvas, () => ({
     reset() {
       handleReset()
+    },
+    deselect() {
+      handleDeselect()
     },
     toggleFullscreen() {
       handleFloat()
