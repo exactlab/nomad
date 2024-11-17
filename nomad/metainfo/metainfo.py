@@ -733,20 +733,6 @@ def metainfo_setter(method):
     return wrapper
 
 
-def metainfo_getter(method):
-    """
-    Decorate a method as a getter.
-    """
-    assert method.__name__ == '__get__'
-    assert method.__code__.co_argcount >= 3
-
-    @wraps(method)
-    def wrapper(self, obj, cls=None, **kwargs):
-        return self if obj is None else method(self, obj, cls, **kwargs)
-
-    return wrapper
-
-
 class Context:
     """
     The root of a metainfo section hierarchy can have a Context. Contexts allow to customize
@@ -3442,6 +3428,8 @@ class Quantity(Property):
 
 class DirectQuantity(Quantity):
     """Used for quantities that would cause indefinite loops due to bootstrapping."""
+
+    __slots__ = '_name', '_default'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
