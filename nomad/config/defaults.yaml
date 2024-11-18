@@ -735,7 +735,8 @@ plugins:
     options:
       example_uploads/1_basic_examples/1_theory:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/theory.zip
+        from_examples_directory: true
+        resources: theory/*
         title: Electronic structure code input and output files
         category: Basic examples
         description: |
@@ -745,7 +746,8 @@ plugins:
           all necessary metadata to produce a **FAIR** dataset.
       example_uploads/1_basic_examples/2_eln:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/eln.zip
+        from_examples_directory: true
+        resources: eln/*
         title: Electronic Lab Notebook
         category: Basic examples
         description: |
@@ -755,17 +757,19 @@ plugins:
           **starting point** to create you own schemas that model **FAIR data** acquired in your lab.
       example_uploads/1_basic_examples/3_tables:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/tabular.zip
+        from_examples_directory: true
+        resources: tabular/*
         title: Tabular Data
         category: Basic examples
         description: |
-          This upload demonstrates the used of tabular data. In this example we use an *xlsx*
+          This upload demonstrates the use of tabular data. In this example we use an *xlsx*
           file in combination with a custom schema. The schema describes what the columns
           in the excel file mean and NOMAD can parse everything accordingly to
           produce a **FAIR** dataset.
       example_uploads/2_tutorials/1_rdm_tutorial:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/rdm_tutorial.zip
+        from_examples_directory: true
+        resources: rdm_tutorial/*
         title: Tailored Research Data Management (RDM) with NOMAD
         category: Tutorials
         description: |
@@ -778,7 +782,8 @@ plugins:
           installed on a NOMAD Oasis.
       example_uploads/2_tutorials/2_cow_tutorial:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/cow_tutorial.zip
+        from_examples_directory: true
+        resources: cow_tutorial/*
         title: NOMAD as a Data Management Framework Tutorial
         category: Tutorials
         description: |
@@ -789,7 +794,8 @@ plugins:
           add visualization to your data.
       example_uploads/3_fairmat_examples/1_ellips:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/ellips.zip
+        from_examples_directory: true
+        resources: ellips/*
         title: Ellipsometry
         category: FAIRmat examples
         description: |
@@ -798,7 +804,8 @@ plugins:
           application definition and a successive analysis of a SiO2 on Si Psi/Delta measurement.
       example_uploads/3_fairmat_examples/2_mpes:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/mpes.zip
+        from_examples_directory: true
+        resources: mpes/*
         title: Mpes
         category: FAIRmat examples
         description: |
@@ -810,7 +817,8 @@ plugins:
             - An analysis example using data in the NeXus format and employing the [pyARPES](https://github.com/chstan/arpes) analysis tool to reproduce the main findings of [this paper](https://arxiv.org/pdf/2107.07158.pdf).
       example_uploads/3_fairmat_examples/3_xps:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/xps.zip
+        from_examples_directory: true
+        resources: xps/*
         title: XPS
         category: FAIRmat examples
         description: |
@@ -820,7 +828,8 @@ plugins:
           application definition and a successive analysis of an example data set.
       example_uploads/3_fairmat_examples/4_sts:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/sts.zip
+        from_examples_directory: true
+        resources: sts/*
         title: STS
         category: FAIRmat examples
         description: |
@@ -829,7 +838,8 @@ plugins:
           The example contains data files from the two specific nanonis software versions generic 5e and generic 4.5.
       example_uploads/3_fairmat_examples/5_stm:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/stm.zip
+        from_examples_directory: true
+        resources: stm/*
         title: STM
         category: FAIRmat examples
         description: |
@@ -838,7 +848,8 @@ plugins:
           The example contains data files from the two specific nanonis software versions generic 5e and generic 4.5.
       example_uploads/3_fairmat_examples/6_apm:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/apm.zip
+        from_examples_directory: true
+        resources: apm/*
         title: Atom Probe Microscopy
         category: FAIRmat examples
         description: |
@@ -851,7 +862,8 @@ plugins:
           input file in the NOMAD Oasis ELN to run the example with your own datasets.
       example_uploads/3_fairmat_examples/7_em:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/em.zip
+        from_examples_directory: true
+        resources: em/*
         title: Electron Microscopy
         category: FAIRmat examples
         description: |
@@ -864,7 +876,8 @@ plugins:
           ELN to run the example with your own datasets.
       example_uploads/3_fairmat_examples/8_iv_temp:
         entry_point_type: example_upload
-        local_path: examples/data/uploads/iv_temp.zip
+        from_examples_directory: true
+        resources: iv_temp/*
         title: Sensor Scan - IV Temperature Curve
         category: FAIRmat examples
         description: |

@@ -94,7 +94,7 @@ export default function ExampleUploadButton(props) {
   const handleClose = () => setOpen(false)
 
   const handleSelect = (exampleUpload) => {
-    api.post(`/uploads?local_path=${exampleUpload.local_path}&upload_name=${exampleUpload.title}`)
+    api.post(`/uploads?example_upload_id=${exampleUpload.id}`)
       .then((data) => {
         history.push(`/user/uploads/upload/id/${data.upload_id}`)
       })

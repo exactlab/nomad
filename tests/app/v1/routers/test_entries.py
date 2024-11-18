@@ -26,7 +26,7 @@ from nomad.metainfo.elasticsearch_extension import entry_type, schema_separator
 from nomad.utils.exampledata import ExampleData
 
 from tests.test_files import example_mainfile_contents, append_raw_files  # pylint: disable=unused-import
-from tests.config import python_schema_name
+from tests.variables import python_schema_name
 
 from .common import (
     aggregation_exclude_from_search_test_parameters,

@@ -41,12 +41,10 @@ from fastapi.exceptions import RequestValidationError
 
 from nomad import utils, files
 from nomad.config import config
-from nomad.config.models.plugins import example_upload_path_prefix
 from nomad.files import (
     StagingUploadFiles,
     is_safe_relative_path,
     is_safe_basename,
-    is_safe_path,
     PublicUploadFiles,
 )
 from nomad.bundles import BundleExporter, BundleImporter
@@ -59,8 +57,8 @@ from nomad.processing import (
     ProcessStatus,
     MetadataEditRequestHandler,
 )
+from nomad.common import get_compression_format
 from nomad.utils import strip
-from nomad.common import get_package_path
 from nomad.search import (
     search,
     search_iterator,
@@ -1424,15 +1422,15 @@ async def put_upload_raw_path(
 
     upload_files = StagingUploadFiles(upload_id)
 
-    decompress = None
+    compression_format = None
     for upload_path in upload_paths:
-        decompress = files.auto_decompress(upload_path)
-        if decompress == 'error':
+        compression_format = get_compression_format(upload_path)
+        if compression_format == 'error':
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
                 detail='Cannot extract file. Bad file format or file extension?',
             )
-        if not decompress and not overwrite_if_exists:
+        if not compression_format and not overwrite_if_exists:
             full_path = os.path.join(path, os.path.basename(upload_path))
             if upload_files.raw_path_exists(full_path):
                 raise HTTPException(
@@ -1501,7 +1499,7 @@ async def put_upload_raw_path(
             detail='Cannot move/copy the file with wait_for_processing set to true.',
         )
 
-    if len(upload_paths) != 1 or decompress:
+    if len(upload_paths) != 1 or compression_format:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             detail='`wait_for_processing` can only be used with single files, and not with compressed files.',
@@ -1740,6 +1738,16 @@ async def post_upload(
             Internal/Admin use only."""
         ),
     ),
+    example_upload_id: Optional[str] = FastApiQuery(
+        None,
+        description=strip(
+            """
+            If provided, instantiates a new upload from the given example upload
+            entry point id. You may use this parameter in combination with other
+            file sources.
+            """
+        ),
+    ),
     file_name: str = FastApiQuery(
         None,
         description=strip(
@@ -1853,18 +1861,22 @@ async def post_upload(
 
     logger.info('upload created', upload_id=upload_id)
 
-    if upload_paths:
-        upload.process_upload(
-            file_operations=[
-                dict(
-                    op='ADD',
-                    path=upload_path,
-                    target_dir=upload_folders[i_path],
-                    temporary=(method != 0),
-                )
-                for i_path, upload_path in enumerate(upload_paths)
-            ]
+    file_operations = [
+        dict(
+            op='ADD',
+            path=upload_path,
+            target_dir=upload_folders[i_path],
+            temporary=(method != 0),
         )
+        for i_path, upload_path in enumerate(upload_paths)
+    ]
+
+    # If creating an example upload, the contents are loaded only during the
+    # first processing: they should not be loaded anymore in later reprocessing.
+    if example_upload_id is not None:
+        upload.process_example_upload(example_upload_id, file_operations)
+    elif upload_paths:
+        upload.process_upload(file_operations)
 
     if request.headers.get('Accept') == 'application/json':
         upload_proc_data_response = UploadProcDataResponse(
@@ -2503,30 +2515,14 @@ async def _get_files_if_provided(
     # Determine the source data stream
     sources: List[Tuple[Any, str]] = []  # List of tuples (source, filename)
     if local_path:
-        # Method 0: Local file - only for local path under examples/data, an
-        # example upload stored within a plugin package or or admin use.
-
-        # The legacy example uploads are stored as zip files under
-        # examples/data.
-        safe_path = None
-        if local_path.startswith('examples'):
-            safe_path = os.path.abspath('examples/data')
-        # The example uploads distributed through plugins are accessible
-        # through the use of a special path prefix.
-        elif local_path.startswith(example_upload_path_prefix):
-            parts = local_path.split('/')
-            package_name = parts[1]
-            safe_path = get_package_path(package_name)
-            local_path = os.path.join(safe_path, '/'.join(parts[2:]))
-
-        # Check if local path points to a safe location
+        # Method 0: Local file - only for admin use.
         if not user.is_admin:
-            if not safe_path or not is_safe_path(local_path, safe_path):
-                raise HTTPException(
-                    status.HTTP_401_UNAUTHORIZED,
-                    detail='You are not authorized to access this path.',
-                )
-
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=strip("""
+                You are not authorized to access this path.
+                """),
+            )
         if not os.path.exists(local_path):
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
@@ -2593,7 +2589,6 @@ async def _get_files_if_provided(
                 with open(upload_path, 'wb') as f:
                     uploaded_bytes = 0
                     log_interval = 1e9
-                    log_unit = 'GB'
                     next_log_at = log_interval
                     async for chunk in source_stream:
                         if not chunk:

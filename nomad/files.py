@@ -73,20 +73,12 @@ import magic
 import zipfile
 
 from nomad import utils, datamodel
+from nomad.common import get_compression_format, extract_file
 from nomad.config import config
 from nomad.archive.storage_v2 import combine_archive
 from nomad.config.models.config import BundleImportSettings, BundleExportSettings
 from nomad.archive import write_archive, read_archive, ArchiveReader, to_json
 
-decompress_file_extensions = (
-    '.zip',
-    '.tgz',
-    '.gz',
-    '.tar.gz',
-    '.tar.bz2',
-    '.tar',
-    '.eln',
-)
 bundle_info_filename = 'bundle_info.json'
 
 # Used to check if zip-files/archive files are empty
@@ -94,34 +86,6 @@ bundle_info_filename = 'bundle_info.json'
 empty_zip_file_size = 22
 empty_hdf5_file_size = 96
 empty_archive_file_size = 32
-
-
-def auto_decompress(path: str):
-    """
-    Returns the decompression format ('zip', 'tar' or 'error') if `path` specifies a file
-    which should be automatically decompressed before adding it to an upload. If `path`
-    does *not* specify a file which we think should be decompressed, or if it specifies a
-    directory, we return None.
-
-    The value 'error' means that we think this file should be decompressed, but that we cannot
-    decompress it. This indicates that the file is corrupted, has a bad file format, or has
-    the wrong file extension.
-
-    Note, some files, like for example excel files, are actually zip files, and we don't want
-    to extract such files. Therefore, we only auto decompress if the file has an extension
-    we recognize as decompressable, like ".zip", ".tar" etc.
-    """
-    if os.path.isdir(path):
-        return None
-    basename_lower = os.path.basename(path).lower()
-    for extension in decompress_file_extensions:
-        if basename_lower.endswith(extension):
-            if tarfile.is_tarfile(path):
-                return 'tar'
-            elif zipfile.is_zipfile(path):
-                return 'zip'
-            return 'error'
-    return None
 
 
 def copytree(src, dst):
@@ -213,17 +177,19 @@ def is_safe_relative_path(path: str) -> bool:
         return False
 
     depth = 0
-    for element in path.split('/'):
+    for element in path.split(os.sep):
         if element == '.':
             continue
         if element == '..':
             depth -= 1
         else:
             depth += 1
-    return depth >= 0
-    # if element == '.' or element == '..':
-    #     return False
-    # return True
+        # If depth at any point goes negative, it means the path goes outside
+        # the base folder
+        if depth < 0:
+            return False
+
+    return True
 
 
 class PathObject:
@@ -1057,20 +1023,13 @@ class StagingUploadFiles(UploadFiles):
             self._size += os.stat(path).st_size
 
             is_dir = os.path.isdir(path)
-            decompress = auto_decompress(path)
-            if decompress:
+            compression_format = get_compression_format(path)
+            if compression_format is 'error':
+                # Unknown / bad file format
+                assert False, 'Cannot extract file. Bad file format or file extension?'
+            elif compression_format is not None:
                 tmp_dir = create_tmp_dir(self.upload_id + '_unzip')
-                if decompress == 'zip':
-                    with zipfile.ZipFile(path) as zf:
-                        zf.extractall(tmp_dir)
-                elif decompress == 'tar':
-                    with tarfile.open(path) as tf:
-                        tf.extractall(tmp_dir)
-                elif decompress == 'error':
-                    # Unknown / bad file format
-                    assert (
-                        False
-                    ), 'Cannot extract file. Bad file format or file extension?'
+                extract_file(path, tmp_dir, compression_format, remove_archive=False)
 
             # Determine what to merge
             elements_to_merge: Iterable[Tuple[str, List[str], List[str]]] = []
@@ -1078,7 +1037,7 @@ class StagingUploadFiles(UploadFiles):
                 # Directory
                 source_dir = path
                 elements_to_merge = os.walk(source_dir)
-            elif decompress:
+            elif compression_format:
                 # Zipped archive
                 source_dir = tmp_dir
                 elements_to_merge = os.walk(source_dir)
@@ -1116,7 +1075,7 @@ class StagingUploadFiles(UploadFiles):
                             os.makedirs(element_target_path)
                     else:
                         # File - copy or move it
-                        if cleanup_source_file_and_dir or decompress:
+                        if cleanup_source_file_and_dir or compression_format:
                             # Move the file
                             shutil.move(element_source_path, element_target_path)
                         else:

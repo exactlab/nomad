@@ -258,13 +258,6 @@ def get_gui_config() -> str:
 
     plugins = _sort_dict(config.plugins.dict(exclude_unset=True))
 
-    # We need to load the example upload entry points to get the final upload
-    # path
-    enabled_entry_points = config.plugins.entry_points.filtered_values()
-    for entry_point in enabled_entry_points:
-        if isinstance(entry_point, ExampleUploadEntryPoint):
-            entry_point.load()
-
     for key in plugins['entry_points']['options'].keys():
         plugins['entry_points']['options'][key] = config.plugins.entry_points.options[
             key
