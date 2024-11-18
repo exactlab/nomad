@@ -36,6 +36,7 @@ from nomad.files import (
     empty_zip_file_size,
     empty_archive_file_size,
     is_safe_path,
+    is_safe_relative_path,
 )
 from nomad.files import StagingUploadFiles, PublicUploadFiles, UploadFiles
 from nomad.processing import Upload
@@ -853,3 +854,23 @@ def test_test_upload_files(raw_files_infra):
 )
 def test_is_safe_path(path, safe_path, is_directory, is_safe):
     assert is_safe_path(path, safe_path, is_directory) == is_safe
+
+
+@pytest.mark.parametrize(
+    'path, is_safe',
+    [
+        pytest.param('', True, id='root path implicit'),
+        pytest.param('.', True, id='root path explicit'),
+        pytest.param('subfolder', True, id='subfolder implicit'),
+        pytest.param('./subfolder', True, id='subfolder excplicit'),
+        pytest.param('/unsafe/a', False, id='absolute path'),
+        pytest.param('../unsafe/a', False, id='outside root start'),
+        pytest.param('subfolder/../../unsafe', False, id='outside root middle'),
+        pytest.param('safe/../safe', True, id='redundant traversal'),
+        pytest.param(None, False, id='Not string'),
+        pytest.param('safe//', False, id='Invalid 1'),
+        pytest.param('safe\n', False, id='Invalid 2'),
+    ],
+)
+def test_is_safe_relative_path(path, is_safe):
+    assert is_safe_relative_path(path) == is_safe

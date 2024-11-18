@@ -51,7 +51,7 @@ from nomad.search import (
 )
 from nomad.utils import deep_get
 from nomad.utils.exampledata import ExampleData
-from tests.config import python_schema_name, yaml_schema_name
+from tests.variables import python_schema_name, yaml_schema_name
 
 
 def split(path):

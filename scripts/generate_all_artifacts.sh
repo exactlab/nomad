@@ -9,5 +9,3 @@ cd $project_dir/scripts
 
 ./generate_docs_artifacts.sh
 ./generate_gui_test_artifacts.sh
-./generate_example_uploads.sh
-

@@ -137,9 +137,7 @@ class Downloads(ArchiveSection):
 
         import pathlib
         import urllib.request
-        import zipfile
-        import tarfile
-        from nomad.files import auto_decompress
+        from nomad.common import get_compression_format, extract_file
 
         # download and extract files
         skip_download = True
@@ -176,19 +174,12 @@ class Downloads(ArchiveSection):
             download_logger.info('downloaded file')
 
             if download.extract:
-                format = auto_decompress(output)
-                if format == 'zip':
-                    with zipfile.ZipFile(output) as zf:
-                        zf.extractall(directory)
-                    download_logger.info('zip extracted file')
-                elif format == 'tar':
-                    with tarfile.open(output) as tf:
-                        tf.extractall(directory)
-                    download_logger.info('tar extracted file')
-                else:
+                format = get_compression_format(output)
+                if format in {None, 'error'}:
                     download_logger.error('unknown compression format')
-
-                os.remove(output)
+                else:
+                    extract_file(output, directory, format)
+                    download_logger.info(f'{format} extracted file')
 
         # trigger processing for mainfiles
         mainfiles = self.mainfiles if self.mainfiles else []

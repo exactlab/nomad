@@ -25,7 +25,7 @@ from nomad.metainfo import Quantity, MSection, SubSection, Datetime, MEnum
 from nomad.datamodel.datamodel import EntryMetadata, SearchableQuantity, EntryArchive
 from nomad.metainfo.elasticsearch_extension import schema_separator
 from nomad.datamodel import EntryData
-from tests.config import python_schema_name
+from tests.variables import python_schema_name
 
 
 @pytest.mark.parametrize(

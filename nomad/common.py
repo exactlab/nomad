@@ -16,12 +16,28 @@
 # limitations under the License.
 #
 
+"""This module contains common functions that do not depend on any of the NOMAD
+source code. Notably, this module should be importable anywhere in the NOMAD
+source code without circular imports.
+"""
+
 import os
 import pkgutil
+import shutil
+import zipfile
+import tarfile
+from typing import Optional
+from typing_extensions import Literal
+from tempfile import TemporaryDirectory
+import httpx
 
 
 def get_package_path(package_name: str) -> str:
-    """Given a python package name, returns the filepath of the package root folder."""
+    """Given a python package name, returns the filepath of the package root folder.
+
+    Raises:
+        ValueError: If the given package cannot be loaded.
+    """
     package_path = None
     try:
         # We try to deduce the package path from the top-level package
@@ -43,3 +59,132 @@ def get_package_path(package_name: str) -> str:
         raise ValueError(f'The python package {package_name} cannot be loaded.', e)
 
     return package_path
+
+
+def download_file(url: str, filepath: str) -> Optional[str]:
+    """Used to download a file from the given URL to the given directory.
+
+    Arg:
+        url: URL pointing to a file to download.
+        filepath: Path where the file is download into. If points to an existing
+            directory, the file is saved there. Otherwise, creates a new file in
+            that exact filepath.
+    Returns:
+        str: The path to the downloaded file.
+
+    Raises:
+        ValueError: If the given file cannot be downloaded.
+    """
+    if os.path.isdir(filepath):
+        filename = url.rsplit('/')[-1]
+        final_filepath = os.path.join(filepath, filename)
+    else:
+        filename = os.path.basename(filepath)
+        final_filepath = filepath
+    directory = os.path.dirname(final_filepath)
+
+    try:
+        with httpx.stream(
+            'GET',
+            url,
+        ) as response:
+            response.raise_for_status()
+            # Download into a temporary directory to ensure the integrity of
+            # the download
+            with TemporaryDirectory() as tmp_folder:
+                tmp_filepath = os.path.join(tmp_folder, filename)
+                with open(tmp_filepath, mode='wb') as file:
+                    for chunk in response.iter_bytes(chunk_size=10 * 1024):
+                        file.write(chunk)
+                # If download has succeeeded, copy the files over to
+                # final location
+                os.makedirs(directory, exist_ok=True)
+                shutil.copyfile(tmp_filepath, final_filepath)
+    except Exception as e:
+        raise ValueError(f'Could not fetch file from URL: {url}') from e
+
+    return final_filepath
+
+
+decompress_file_extensions = {
+    '.zip': 'zip',
+    '.tgz': 'tar',
+    '.gz': 'tar',
+    '.tar.gz': 'tar',
+    '.tar.bz2': 'tar',
+    '.tar': 'tar',
+    '.eln': 'zip',
+}
+
+
+def get_compression_format(path: str) -> Optional[Literal['zip', 'tar', 'error']]:
+    """
+    Returns the decompression format ('zip', 'tar' or 'error') if `path` specifies a file
+    which should be automatically decompressed before adding it to an upload. If `path`
+    does *not* specify a file which we think should be decompressed, or if it specifies a
+    directory, we return None.
+
+    The value 'error' means that we think this file should be decompressed, but that we cannot
+    decompress it. This indicates that the file is corrupted, has a bad file format, or has
+    the wrong file extension.
+
+    Note, some files, like for example excel files, are actually zip files, and we don't want
+    to extract such files. Therefore, we only auto decompress if the file has an extension
+    we recognize as decompressable, like ".zip", ".tar" etc.
+    """
+    if os.path.isdir(path):
+        return None
+    basename_lower = os.path.basename(path).lower()
+    for extension, format in decompress_file_extensions.items():
+        if basename_lower.endswith(extension):
+            if format == 'tar':
+                return 'tar' if tarfile.is_tarfile(path) else 'error'
+            elif format == 'zip':
+                return 'zip' if zipfile.is_zipfile(path) else 'error'
+    return None
+
+
+def extract_file(
+    filepath: str,
+    directory: str = None,
+    format: Literal['zip', 'tar', 'error'] = None,
+    remove_archive: bool = True,
+):
+    """Extracts the given file in place. Supports extracting .zip and .tar
+    files.
+
+    Arg:
+        filepath: Path of the file to extract.
+        format: File format. The format will be guessed if not given.
+        directory: Directory where to extract files. If not given, defaults to
+            the directory where the archive file is.
+        remove_archive: Whether to remove the archive files after successful
+            extraction.
+
+    Raises:
+        ValueError: If the given file could not be extracted.
+    """
+    format = format or get_compression_format(filepath)
+    directory = directory or os.path.dirname(filepath)
+    if format:
+        try:
+            if format == 'zip':
+                with zipfile.ZipFile(filepath) as zf:
+                    zf.extractall(directory)
+            elif format == 'tar':
+                with tarfile.open(filepath) as tf:
+                    tf.extractall(directory)
+            elif format == 'error':
+                raise ValueError('Could not open file.')
+        except Exception as e:
+            raise ValueError(
+                'Cannot extract file. Bad file format or file extension?'
+            ) from e
+        else:
+            if remove_archive:
+                os.remove(filepath)
+
+
+def is_url(path) -> bool:
+    """Utility function for determining whether a filepath represents a URL."""
+    return path.startswith('http://') or path.startswith('https://')

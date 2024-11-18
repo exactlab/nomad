@@ -76,6 +76,7 @@ from nomad import (
     client,
 )
 from nomad.config import config
+from nomad.config.models.plugins import ExampleUploadEntryPoint
 
 from nomad.datamodel.datamodel import RFC3161Timestamp
 from nomad.files import (
@@ -1958,6 +1959,55 @@ class Upload(Proc):
             self.published_to.append(config.oasis.central_nomad_deployment_url)
         finally:
             PathObject(tmp_dir).delete()
+
+    @process()
+    def process_example_upload(
+        self, entry_point_id: str, file_operations: List[Dict[str, Any]] = None
+    ):
+        """Used to initiate the processing of an example upload entry point.
+        This process is only triggered once per example upload, and any further
+        reprocessing happens through the usual `process_upload` function.
+
+        Arguments:
+            entry_point_id: The unique indentifier for the example upload entry
+                point id to initialize.
+            file_operattions: Additional file operations that should be added on
+                top of the file operations coming from the entry point.
+        """
+        logger = self.get_logger()
+        logger.info('loading example upload entry point data')
+        self.set_last_status_message('Loading example upload data.')
+
+        try:
+            entry_point = cast(
+                ExampleUploadEntryPoint,
+                config.get_plugin_entry_point(entry_point_id),
+            )
+        except Exception as e:
+            raise ValueError(
+                'error loading example upload entry point "{example_upload_entry_point_id}": could not load configuration'
+            ) from e
+
+        # Create the upload folder in staging
+        self.set_last_status_message('Creating staging files')
+        StagingUploadFiles(self.upload_id, create=True)
+        upload_folder = self.staging_upload_files._raw_dir.os_path
+
+        # Add files using exaple upload entry point
+        try:
+            entry_point.load(upload_folder)
+        except Exception as e:
+            raise ValueError(
+                'error loading example upload entry point "{example_upload_entry_point_id}": error in load() function'
+            ) from e
+
+        # Use the example upload title as default name if not overridden
+        if self.upload_name is None:
+            self.upload_name = entry_point.title
+
+        # Process upload. Any file operations from the original API call are
+        # added on top.
+        self.process_upload(file_operations=file_operations)
 
     @process()
     def process_upload(

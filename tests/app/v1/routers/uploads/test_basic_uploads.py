@@ -21,6 +21,7 @@ import os
 import time
 import zipfile
 from datetime import datetime
+import tempfile
 from typing import Any, Dict, Iterable, List
 
 import pytest
@@ -30,6 +31,7 @@ from nomad import files, infrastructure
 from nomad.bundles import BundleExporter
 from nomad.config import config
 from nomad.config.models.config import BundleImportSettings
+from nomad.config.models.plugins import ExampleUploadEntryPoint
 from nomad.datamodel import EntryMetadata
 from nomad.files import PublicUploadFiles, StagingUploadFiles, UploadFiles
 from nomad.processing import Entry, ProcessStatus, Upload
@@ -42,6 +44,10 @@ from tests.processing.test_edit_metadata import (
     all_admin_metadata,
     all_coauthor_metadata,
     assert_metadata_edited,
+)
+from tests.config.models.test_plugins import (
+    mock_plugin_package,
+    mock_example_upload_entry_point,
 )
 from tests.test_files import (
     assert_upload_files,
@@ -3164,6 +3170,17 @@ def test_post_upload_edit(
             200,
             id='upload-multiple-files-one-corrupt',
         ),
+        pytest.param(
+            None,
+            [],
+            dict(example_upload_id='test'),
+            'user1',
+            False,
+            False,
+            True,
+            200,
+            id='example-upload',
+        ),
     ],
 )
 def test_post_upload(
@@ -3191,6 +3208,27 @@ def test_post_upload(
         source_paths = [source_paths]
     if test_limit:
         monkeypatch.setattr('nomad.config.services.upload_limit', 0)
+
+    # Create a mocked example upload + files if testing example uploads
+    is_example_upload = query_args.get('example_upload_id')
+    if is_example_upload:
+        temp_dir = tempfile.TemporaryDirectory()
+        package_directory = temp_dir.name
+        filepath = os.path.join(package_directory, 'data.txt')
+        with open(filepath, 'w'):
+            pass
+        assert os.path.exists(filepath)
+        mock_plugin_package(monkeypatch, package_directory)
+        mock_example_upload_entry_point(
+            monkeypatch,
+            ExampleUploadEntryPoint(
+                id='test',
+                title='test',
+                description='test',
+                category='test',
+                resources='data.txt',
+            ),
+        )
 
     action = 'POST'
     url = 'uploads'
@@ -3221,6 +3259,9 @@ def test_post_upload(
         published,
         all_entries_should_succeed,
     )
+
+    if is_example_upload:
+        temp_dir.cleanup()
 
     if expected_status_code == 200 and processed_response_data:
         expected_upload_name = query_args.get('upload_name')

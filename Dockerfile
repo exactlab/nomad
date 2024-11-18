@@ -166,9 +166,6 @@ COPY gui/tests/nomad.yaml ./gui/tests/nomad.yaml
 COPY gui/tests/env.js ./gui/tests/env.js
 COPY gui/tests/artifacts.js ./gui/tests/artifacts.js
 
-# build the example upload files
-RUN ./scripts/generate_example_uploads.sh
-
 # Copy the built gui code
 COPY --from=build_node /app/gui/build nomad/app/static/gui
 
