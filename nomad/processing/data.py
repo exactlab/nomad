@@ -2001,10 +2001,6 @@ class Upload(Proc):
                 'error loading example upload entry point "{example_upload_entry_point_id}": error in load() function'
             ) from e
 
-        # Use the example upload title as default name if not overridden
-        if self.upload_name is None:
-            self.upload_name = entry_point.title
-
         # Process upload. Any file operations from the original API call are
         # added on top.
         self.process_upload(file_operations=file_operations)
