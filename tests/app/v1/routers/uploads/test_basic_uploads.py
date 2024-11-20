@@ -3266,7 +3266,9 @@ def test_post_upload(
     if expected_status_code == 200 and processed_response_data:
         expected_upload_name = query_args.get('upload_name')
         if not expected_upload_name:
-            if mode in ('multipart', 'local_path') and len(source_paths) == 1:
+            if is_example_upload:
+                expected_upload_name = 'test'
+            elif mode in ('multipart', 'local_path') and len(source_paths) == 1:
                 expected_upload_name = os.path.basename(source_paths[0])
             elif mode == 'stream':
                 expected_upload_name = query_args.get('file_name')

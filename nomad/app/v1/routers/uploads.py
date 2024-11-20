@@ -20,7 +20,7 @@ import io
 import shutil
 from enum import Enum
 from datetime import datetime
-from typing import Tuple, List, Set, Dict, Any, Optional, Union
+from typing import Tuple, List, Set, Dict, Any, Optional, Union, cast
 from pydantic import BaseModel, Field, validator
 from mongoengine.queryset.visitor import Q
 from urllib.parse import unquote
@@ -41,6 +41,7 @@ from fastapi.exceptions import RequestValidationError
 
 from nomad import utils, files
 from nomad.config import config
+from nomad.config.models.plugins import ExampleUploadEntryPoint
 from nomad.files import (
     StagingUploadFiles,
     is_safe_relative_path,
@@ -1842,7 +1843,19 @@ async def post_upload(
 
     if not upload_name:
         # Try to default upload_name
-        if method == 2:
+        if example_upload_id:
+            try:
+                entry_point = cast(
+                    ExampleUploadEntryPoint,
+                    config.get_plugin_entry_point(example_upload_id),
+                )
+            except Exception:
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST,
+                    detail=f'Could not find example upload with id "{example_upload_id}"',
+                )
+            upload_name = entry_point.title
+        elif method == 2:
             upload_name = file_name or None
         elif len(upload_paths) == 1:
             upload_name = os.path.basename(upload_paths[0])
