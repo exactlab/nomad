@@ -363,7 +363,7 @@ def resolve_variadic_name(definitions: dict, name: str, hint: Optional[str] = No
 
     for definition in definitions:
         match_score = get_namefit(name, definition)
-        if match_score > 0:
+        if match_score >= 0:
             candidates[definition] = match_score
             # Check if the hint exists in the definition
             if hint and hint in definition.all_attributes:
