@@ -1,3 +1,30 @@
+## 1.3.11 (2024-11-21)
+
+### Changed (5 changes)
+
+- [Vendor in pace.min.js and text-mml-chtml.js](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/76ef881b9dc121aacf06673d22e08b2c1bfff6a9) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2188))
+- [Delayed the loading of example uploads to take place in the processing...](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/e0167fa4439ac9be712915ab90f99bc4c62a39b8) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2062))
+- [Resolve "move third party integrations to github as plugins"](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/0041e0ff2ccdb7360cf4d47b097add6c3837b32d) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2124))
+- [Make mongo_client import optional](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/45e891baa480d59e0c6a0fc3b923acb18b0bb13f) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2187))
+- [Upgrade to Python 3.12](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/4132472b731354c2fc4c5bbd06a87b516dc957da) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2029))
+
+### Fixed (4 changes)
+
+- [Fixed issues with scatter plot region selection.](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/1cc85bd37db95f3bbae50e00326afbe3e776836e) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2215))
+- [Fixed issue with search API not returning all requested data.](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/a00cb5fd5086c0b92b87a5fcef28a121d6e41a4d) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2165))
+- [Resolve "SliderEditQuantity not showing"](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/10480caf96855a42d1f60f2b1e184b3796708071) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2167))
+- [Using the config user and password in CLI when no user is given via](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/46228a14b17dc64c6b291713b533dbde5ba43007) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2089))
+
+### Added (7 changes)
+
+- [Hdf5dataset ref](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/dda4f75b34fdb448a8d72e3a37277c1bcf8b2291) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2194))
+- [Implementing writing of h5 ref attrs](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/035beb24dc8d09dc097e2b389ec68bf6e9236539) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2197))
+- [Resolve "update mainfile_contents_dict functionality for cvs/xlsx files"](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/a3eda443927dc5e7c400f32b896b8fa40da52602) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2192))
+- [Hdf5dataset attrs](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/b9f30c63826f8cdb63669bad4ae60cce55c2d0d9) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2169))
+- [Added the possibility for defining the menu structure and contents through apps.](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/e32230ac0a09d14de6330be6c0de131d328e8f16) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2108))
+- [Added API entry point.](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/f7715b890c40b1842e197c3809d20cda066adb0b) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2089))
+- [Initial implementation for change base archive editing.](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/commit/571a2afa4989897ddbc1242352040df2e087425f) ([merge request](https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR/-/merge_requests/2089))
+
 ## 1.3.10 (2024-10-18)
 
 ### Fixed (1 change)
