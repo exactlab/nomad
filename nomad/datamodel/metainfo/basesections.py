@@ -1490,7 +1490,7 @@ class PubChemPureSubstanceSection(PureSubstanceSection):
             property_values = response.json()['PropertyTable']['Properties'][0]
         except (KeyError, IndexError):
             property_values = {}
-        for property_name in properties:
+        for property_name in properties:  # noqa
             if getattr(self, properties[property_name], None) is None:
                 try:
                     property_value = property_values[property_name]
