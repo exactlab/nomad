@@ -470,7 +470,7 @@ class QueryParameters:
 
         # transform query parameters to query
         query: Dict[str, Any] = {}
-        for key in query_params:
+        for key, query_value in query_params.items():
             op = None
             if '__' in key:
                 quantity_name, op = key.split('__')
@@ -496,7 +496,7 @@ class QueryParameters:
             elif standard_type.startswith('datetime'):
                 converter = datetime.datetime.fromisoformat
 
-            values = [converter(value) for value in query_params[key]]
+            values = [converter(value) for value in query_value]
 
             if op is None:
                 op = 'all' if quantity.many_all else 'any'

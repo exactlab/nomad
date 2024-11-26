@@ -83,8 +83,8 @@ def assert_topology(topology):
             assert top.atomic_fraction is not None
 
     assert len(child_map) == len(child_map_determined)
-    for key in child_map.keys():
-        assert child_map[key] == child_map_determined[key]
+    for key, child_map_value in child_map.items():
+        assert child_map_value == child_map_determined[key]
 
 
 @pytest.mark.parametrize(
