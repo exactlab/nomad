@@ -131,8 +131,6 @@ const Quantity = React.memo((props) => {
     format
   } = {...presets, ...props}
 
-  console.log('### 2', quantity, data)
-
   const getRenderFromType = useCallback((quantity, data) => {
     const type = quantity.type
     let value = data[quantity.name]
