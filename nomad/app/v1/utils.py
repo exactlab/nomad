@@ -276,3 +276,17 @@ def update_url_query_arguments(original_url: str, **kwargs) -> str:
             query_dict[k] = [str(v)]
     query = urllib.parse.urlencode(query_dict, doseq=True)
     return urllib.parse.urlunparse((scheme, netloc, path, params, query, fragment))
+
+
+def convert_data_to_dict(data: Any) -> Dict[str, Any]:
+    """
+    Converts a pydantic model or a dictionary containing pydantic models to a dictionary.
+
+    Arguments:
+        data: A pydantic model or a dictionary containing pydantic models.
+    """
+    if hasattr(data, 'dict') and callable(getattr(data, 'dict')):
+        return data.dict()
+    elif not isinstance(data, dict):
+        return data
+    return {k: convert_data_to_dict(v) for k, v in data.items()}

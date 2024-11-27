@@ -208,6 +208,7 @@ services:
   https: false
   https_upload: false
   image_resource_http_max_age: 2592000
+  log_api_queries: true
   max_entry_download: 50000
   optimade_enabled: true
   unavailable_value: unavailable

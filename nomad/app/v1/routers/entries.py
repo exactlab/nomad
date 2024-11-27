@@ -67,6 +67,7 @@ from ..utils import (
     browser_download_headers,
     DownloadItem,
     create_responses,
+    convert_data_to_dict,
 )
 from ..models import (
     Aggregation,
@@ -517,8 +518,7 @@ async def post_entries_metadata_query(
     The `statistics` and `aggregations` keys will further allow to return statistics
     and aggregated data over all search results.
     """
-
-    return perform_search(
+    res = perform_search(
         owner=data.owner,
         query=data.query,
         pagination=data.pagination,
@@ -526,6 +526,10 @@ async def post_entries_metadata_query(
         aggregations=data.aggregations,
         user_id=user.user_id if user is not None else None,
     )
+    if config.services.log_api_queries:
+        query = convert_data_to_dict(data.query)
+        logger.info('search query log', query=query, endpoint='entries/query')
+    return res
 
 
 @router.get(
@@ -997,7 +1001,7 @@ async def post_entries_archive_query(
     data: EntriesArchive,
     user: User = Depends(create_user_dependency()),
 ):
-    return await _answer_entries_archive_request(
+    res = await _answer_entries_archive_request(
         request=request,
         owner=data.owner,
         query=data.query,
@@ -1005,6 +1009,16 @@ async def post_entries_archive_query(
         required=data.required,
         user=user,
     )
+    if config.services.log_api_queries:
+        query = convert_data_to_dict(data.query)
+        required = convert_data_to_dict(data.required)
+        logger.info(
+            'search query log',
+            query=query,
+            required=required,
+            endpoint='entries/archive/query',
+        )
+    return res
 
 
 @router.get(
