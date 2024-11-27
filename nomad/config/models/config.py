@@ -208,7 +208,10 @@ class Services(ConfigBaseModel):
         False,
         description='If true, the GUI will show a search for groups as upload members.',
     )
-
+    log_api_queries = Field(
+        True,
+        description='If true, all queries to the /entries/query API endpoint will be logged.',
+    )
     # Validators
     _console_log_level = validator('console_log_level', allow_reuse=True)(
         normalize_loglevel
