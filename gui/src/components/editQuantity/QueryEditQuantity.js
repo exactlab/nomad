@@ -99,6 +99,10 @@ function SearchDialog({open, filters, pageSize, onCancel, onQueryChanged}) {
     }
   }, [onQueryChanged, newFilters, apiData, results])
 
+  const handleSearchDialogClose = (value) => {
+    onCancel()
+  }
+
   return <Dialog
     open={open}
     PaperProps={{
@@ -110,13 +114,14 @@ function SearchDialog({open, filters, pageSize, onCancel, onQueryChanged}) {
       }
     }}
     data-testid='search-dialog'
+    onClose={handleSearchDialogClose}
   >
     <DialogContent>
       <SearchPage/>
     </DialogContent>
     <DialogActions>
       <span style={{flexGrow: 1}} />
-      <Button onClick={() => onCancel()} color="secondary">
+      <Button onClick={handleSearchDialogClose} color="secondary">
         Cancel
       </Button>
       <Button onClick={() => handleQueryChanged()} color="secondary" data-testid='search-dialog-ok'>

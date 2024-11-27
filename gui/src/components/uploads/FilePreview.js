@@ -39,7 +39,7 @@ export default function FilePreview({uploadId, path, onClose}) {
   const [content] = useState(null)
   const classes = useFilePreviewStyles()
 
-  return <Dialog open>
+  return <Dialog open onClose={onClose}>
     <DialogTitle>File preview: {path}</DialogTitle>
     <DialogContent ref={scrollRef}>
       <InfiniteScroll

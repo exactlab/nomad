@@ -43,15 +43,17 @@ import { pluralize } from '../utils'
  * Displays an info dialog.
  */
 function InfoDialog({title, data, DialogProps, onClose}) {
+  const handleClose = useCallback(() => onClose?.(), [onClose])
+
   if (!data) return null
 
-  return <Dialog maxWidth='md' fullWidth open={true} {...DialogProps}>
+  return <Dialog maxWidth='md' fullWidth open={true} {...DialogProps} onClose={handleClose}>
     <DialogTitle>{title}</DialogTitle>
     <DialogContent>
       <InputConfig data={data} format="YAML" readOnly/>
     </DialogContent>
     <DialogActions>
-      <Button onClick={() => onClose?.()} color="primary">
+      <Button onClick={handleClose} color="primary">
         close
       </Button>
     </DialogActions>
@@ -146,6 +148,8 @@ DistributionInfo.propTypes = {
 }
 
 function CodeInfo({code, ...props}) {
+  const handleClose = useCallback(() => props.onClose?.(), [props])
+
   if (!code) {
     return null
   }
@@ -164,7 +168,7 @@ function CodeInfo({code, ...props}) {
       `
   }
 
-  return <Dialog open={true} {...props}>
+  return <Dialog open={true} {...props} onClose={handleClose}>
     <DialogTitle>{metadata.codeLabel || code}</DialogTitle>
     <DialogContent>
       <Markdown>{`
@@ -183,7 +187,7 @@ function CodeInfo({code, ...props}) {
       `}</Markdown>
     </DialogContent>
     <DialogActions>
-      <Button onClick={() => props.onClose && props.onClose()} color="primary">
+      <Button onClick={handleClose} color="primary">
         close
       </Button>
     </DialogActions>

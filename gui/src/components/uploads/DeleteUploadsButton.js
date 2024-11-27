@@ -96,6 +96,10 @@ const DeleteUploadsButton = React.memo(({
     onConfirm && onConfirm()
   }, [onConfirm])
 
+  const handleClose = (value) => {
+    setOpenDialog(false)
+  }
+
   return (
     <React.Fragment>
       <IconButton
@@ -109,7 +113,7 @@ const DeleteUploadsButton = React.memo(({
           <DeleteIcon />
         </Tooltip>
       </IconButton>
-      <Dialog open={openDialog}>
+      <Dialog open={openDialog} onClose={handleClose}>
         <DialogContent>
           <DialogContentText>
             <b>{`Please confirm deleting the ${uploadText}`}</b>
@@ -122,7 +126,7 @@ const DeleteUploadsButton = React.memo(({
           <DeletingReferencesTable entryReferences={entryReferences} brokenEntries={brokenEntries}/>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)} autoFocus>Cancel</Button>
+          <Button onClick={handleClose} autoFocus>Cancel</Button>
           <Button onClick={() => handleDelete()}>{brokenEntries.length > 0 ? 'Delete anyway' : 'Delete'}</Button>
         </DialogActions>
       </Dialog>

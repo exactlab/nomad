@@ -154,6 +154,10 @@ export const ArchiveSaveButton = React.memo(function ArchiveSaveButton(props) {
     setDisabled(false)
   }, [reload])
 
+  const handleClose = useCallback((value) => {
+    setOpenErrorDialog(false)
+  }, [setOpenErrorDialog])
+
   return <React.Fragment>
     {editable &&
       <IconButton
@@ -168,6 +172,7 @@ export const ArchiveSaveButton = React.memo(function ArchiveSaveButton(props) {
     <Dialog
       open={openErrorDialog}
       aria-describedby="alert-dialog-description"
+      onClose={handleClose}
     >
       <DialogContent>
         <DialogContentText>
@@ -175,7 +180,7 @@ export const ArchiveSaveButton = React.memo(function ArchiveSaveButton(props) {
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpenErrorDialog(false)}>OK</Button>
+        <Button onClick={handleClose}>OK</Button>
         <Button onClick={handleReload} autoFocus>Reload</Button>
       </DialogActions>
     </Dialog>

@@ -52,7 +52,7 @@ export const WidgetEditDialog = React.memo(({id, title, open, visible, onAccept,
       return
     }
 
-    // If the widget has not bee visualized, then closing the dialog deletes
+    // If the widget has not been visualized, then closing the dialog deletes
     // the widget completely.
     onClose && onClose()
     if (!visible) {
