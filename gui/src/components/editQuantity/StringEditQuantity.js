@@ -38,12 +38,15 @@ import {configState} from "../archive/ArchiveBrowser"
 
 const HelpDialog = React.memo(({title, description}) => {
   const [open, setOpen] = useState(false)
+  const handleClose = (value) => {
+    setOpen(false)
+  }
 
   return <React.Fragment>
     {description && <IconButton size="small" onClick={() => setOpen(true)}>
       {<HelpOutlineIcon fontSize='small'/>}
     </IconButton>}
-    {open && <Dialog open={open}>
+    {open && <Dialog open={open} onClose={handleClose}>
       <DialogTitle>
         {title}
       </DialogTitle>
@@ -52,7 +55,7 @@ const HelpDialog = React.memo(({title, description}) => {
       </DialogContent>
       <DialogActions>
         <span style={{flexGrow: 1}} />
-        <Button onClick={() => setOpen(false)} color="secondary">
+        <Button onClick={handleClose} color="secondary">
           Close
         </Button>
       </DialogActions>

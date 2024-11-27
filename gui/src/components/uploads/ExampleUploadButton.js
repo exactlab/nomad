@@ -56,7 +56,7 @@ const ExampleUploadDialog = React.memo(function ExampleUploadDialog(props) {
   }, [filterExamples, onSelect])
 
   return (
-    <Dialog {...dialogProps}>
+    <Dialog {...dialogProps} onClose={dialogProps.onClose}>
       <DialogTitle id="Uploads-dialogBox">Select a sample Upload</DialogTitle>
       <DialogContent>
         <Box maxHeight={800}>

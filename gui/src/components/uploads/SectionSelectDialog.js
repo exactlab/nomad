@@ -302,7 +302,7 @@ function SearchBox({open, onCancel, onSelectedChanged, selected}) {
   }, [filterList])
 
   return <searchDialogContext.Provider value={contextValue}>
-    <Dialog classes={{paper: classes.dialog}} open={open} data-testid='section-select-dialog'>
+    <Dialog classes={{paper: classes.dialog}} open={open} data-testid='section-select-dialog' onClose={handleCancel}>
       <DialogContent className={classes.dialogContent}>
         <SearchBar quantities={quantities} className={classes.searchBar} />
         <Typography className={classes.filters} variant="body1">

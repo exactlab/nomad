@@ -658,6 +658,7 @@ function UploadOverview(props) {
             <Dialog
               open={openEmbargoConfirmDialog}
               aria-describedby="alert-dialog-description"
+              onClose={() => setOpenEmbargoConfirmDialog(false)}
             >
               <DialogContent>
                 <DialogContentText id="alert-dialog-description">

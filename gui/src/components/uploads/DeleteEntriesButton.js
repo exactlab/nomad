@@ -88,6 +88,10 @@ export const DeleteEntriesButton = React.memo(({tooltip, disabled, buttonProps, 
       )
   }, [setOpenDeleteConfirmDialog, api, raiseError, uploadId, selectedEntries, setSelected, updateUpload, entryId, history, deleteFolders])
 
+  const handleOpenDeleteConfirmDialogClose = (value) => {
+    setOpenDeleteConfirmDialog(false)
+  }
+
   return (
     uploadContext || (entryContext && editable) ? <React.Fragment>
       <IconButton
@@ -103,6 +107,7 @@ export const DeleteEntriesButton = React.memo(({tooltip, disabled, buttonProps, 
       <Dialog
         open={openDeleteConfirmDialog}
         aria-describedby="alert-dialog-description"
+        onClose={handleOpenDeleteConfirmDialogClose}
       >
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
@@ -123,7 +128,7 @@ export const DeleteEntriesButton = React.memo(({tooltip, disabled, buttonProps, 
           <DeletingReferencesTable entryReferences={entryReferences} brokenEntries={brokenEntries}/>
         </DialogContent>
         <DialogActions >
-          <Button onClick={() => setOpenDeleteConfirmDialog(false)} autoFocus>Cancel</Button>
+          <Button onClick={handleOpenDeleteConfirmDialogClose} autoFocus>Cancel</Button>
           <Button onClick={() => handleDelete()} data-testid={'delete-dialog-delete-button'}>
             {deleteFolders
             ? `${brokenEntries.length > 0 ? 'Delete anyway' : 'Delete'} ${pluralize('entry', count, true)} and the ${pluralize('folder', count, false)}`

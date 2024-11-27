@@ -98,6 +98,14 @@ const DatasetActions = React.memo(function VisitDatasetAction({data}) {
       .catch(raiseError)
   }, [api, raiseError, data.dataset_id, refresh, setOpenConfirmDoiDialog])
 
+  const handleConfirmDeleteDialogClose = (value) => {
+    setOpenConfirmDeleteDialog(false)
+  }
+
+  const handleConfirmDoiDialogClose = (value) => {
+    setOpenConfirmDoiDialog(false)
+  }
+
   return <React.Fragment>
     {dataciteEnabled && <Tooltip title="Assign a DOI">
       <span>
@@ -119,7 +127,7 @@ const DatasetActions = React.memo(function VisitDatasetAction({data}) {
       </DatasetButton>
     </Tooltip>
     <Dialog
-      open={openConfirmDeleteDialog}
+      open={openConfirmDeleteDialog} onClose={handleConfirmDeleteDialogClose}
     >
       <DialogContent>
         <DialogContentText id="alert-dialog-description">
@@ -127,13 +135,13 @@ const DatasetActions = React.memo(function VisitDatasetAction({data}) {
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpenConfirmDeleteDialog(false)} autoFocus>Cancel</Button>
+        <Button onClick={handleConfirmDeleteDialogClose} autoFocus>Cancel</Button>
         <Button onClick={handleDelete}>Delete</Button>
       </DialogActions>
     </Dialog>
     <Dialog
       open={openConfirmDoiDialog}
-      onClose={() => setOpenConfirmDoiDialog(false)}
+      onClose={handleConfirmDoiDialogClose}
     >
       <DialogTitle>Confirm that you want to assign a DOI</DialogTitle>
       <DialogContent>
@@ -143,7 +151,7 @@ const DatasetActions = React.memo(function VisitDatasetAction({data}) {
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpenConfirmDoiDialog(false)} autoFocus>Cancel</Button>
+        <Button onClick={handleConfirmDoiDialogClose} autoFocus>Cancel</Button>
         <Button onClick={handleAssignDoi}>Assign DOI</Button>
       </DialogActions>
     </Dialog>

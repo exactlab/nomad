@@ -111,6 +111,9 @@ ContentButton.defaultProps = {
 export const DialogButton = React.memo(function DialogButton(props) {
   const {tooltip, buttonComponent, icon, label, title, children, buttonProps, ...DialogProps} = props
   const [open, setOpen] = useState(false)
+  const handleClose = (value) => {
+    setOpen(false)
+  }
 
   return <ContentButton
     tooltip={tooltip}
@@ -118,13 +121,13 @@ export const DialogButton = React.memo(function DialogButton(props) {
     ButtonProps={{...buttonProps, onClick: () => setOpen(true)}}
     buttonContent={label || icon || <CodeIcon/>}
   >
-    <Dialog {...DialogProps} open={open}>
+    <Dialog {...DialogProps} open={open} onClose={handleClose}>
       {title && <DialogTitle>{title}</DialogTitle>}
       <DialogContent>
         {children}
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpen(false)}>
+        <Button onClick={handleClose}>
           Close
         </Button>
       </DialogActions>

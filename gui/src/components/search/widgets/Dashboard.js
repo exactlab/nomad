@@ -367,12 +367,16 @@ export const DashboardExportButton = React.memo(({tooltip, title, DialogProps, B
     setOpen(false)
   }, [widgetImportError, widgetImport, setWidgets])
 
+  const handleClose = (value) => {
+    setOpen(false)
+  }
+
   return <ContentButton
     tooltip={tooltip}
     buttonContent={<CodeIcon fontSize="small"/>}
     ButtonProps={{...ButtonProps, onClick: () => { setOpen(true) }}}
   >
-    <Dialog {...DialogProps} open={open}>
+    <Dialog {...DialogProps} open={open} onClose={handleClose}>
       {title && <DialogTitle>{title}</DialogTitle>}
       <DialogContent>
         <Markdown text="The current dashboard configuration in YAML. You can modify it here directly and save it to update the dashboard."/>
@@ -387,7 +391,7 @@ export const DashboardExportButton = React.memo(({tooltip, title, DialogProps, B
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpen(false)}>
+        <Button onClick={handleClose}>
           Cancel
         </Button>
         <Button disabled={!!widgetImportError} onClick={handleSave}>
