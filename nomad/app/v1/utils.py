@@ -290,3 +290,43 @@ def convert_data_to_dict(data: Any) -> Dict[str, Any]:
     elif not isinstance(data, dict):
         return data
     return {k: convert_data_to_dict(v) for k, v in data.items()}
+
+
+def convert_log_to_json(data: Any):
+    """
+    Converts the log field to json and returns the keys of the data.
+    """
+    data = convert_data_to_dict(data)
+    data_keys = list(data.keys()) if isinstance(data, dict) else []
+    data_json = json.dumps(data, sort_keys=True)
+    return data_json, data_keys
+
+
+def log_query(logger, query, required=None, endpoint='entries/query'):
+    """
+    Logs the query and required fields for a search.
+
+    Arguments:
+        logger: the logger object to use.
+        query: the query parameters.
+        required: the required query parameters.
+        endpoint: the endpoint.
+    """
+    query_json, query_keys = convert_log_to_json(query)
+    if required:
+        required_json, required_keys = convert_log_to_json(required)
+        logger.info(
+            'search query log',
+            query=query_json,
+            query_keys=query_keys,
+            required=required_json,
+            required_keys=required_keys,
+            endpoint=endpoint,
+        )
+    else:
+        logger.info(
+            'search query log',
+            query=query_json,
+            query_keys=query_keys,
+            endpoint=endpoint,
+        )

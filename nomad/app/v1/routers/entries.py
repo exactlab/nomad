@@ -67,7 +67,7 @@ from ..utils import (
     browser_download_headers,
     DownloadItem,
     create_responses,
-    convert_data_to_dict,
+    log_query,
 )
 from ..models import (
     Aggregation,
@@ -526,9 +526,8 @@ async def post_entries_metadata_query(
         aggregations=data.aggregations,
         user_id=user.user_id if user is not None else None,
     )
-    if config.services.log_api_queries:
-        query = convert_data_to_dict(data.query)
-        logger.info('search query log', query=query, endpoint='entries/query')
+    if config.services.log_api_queries and data.query and data.query != {}:
+        log_query(logger, data.query)
     return res
 
 
@@ -1009,15 +1008,14 @@ async def post_entries_archive_query(
         required=data.required,
         user=user,
     )
-    if config.services.log_api_queries:
-        query = convert_data_to_dict(data.query)
-        required = convert_data_to_dict(data.required)
-        logger.info(
-            'search query log',
-            query=query,
-            required=required,
-            endpoint='entries/archive/query',
-        )
+    if (
+        config.services.log_api_queries
+        and data.query
+        and data.required
+        and data.query != {}
+        and data.required != {}
+    ):
+        log_query(logger, data.query, data.required, 'entries/archive')
     return res
 
 
