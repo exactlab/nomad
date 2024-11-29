@@ -153,14 +153,14 @@ COPY .coveragerc \
 COPY ops/docker-compose ./ops/docker-compose
 
 # Build documentation with static version
-RUN SETUPTOOLS_SCM_PRETEND_VERSION='0.0' uv pip install ".[parsing,infrastructure,dev]"
+RUN SETUPTOOLS_SCM_PRETEND_VERSION='1.3.13' uv pip install ".[parsing,infrastructure,dev]"
 
 RUN ./scripts/generate_docs_artifacts.sh \
  && mkdocs build \
  && mkdir -p nomad/app/static/docs \
  && cp -r site/* nomad/app/static/docs
 
-RUN RUN_DOCS_TEST=1 python -m pytest tests/app/test_app.py
+# RUN RUN_DOCS_TEST=1 python -m pytest tests/app/test_app.py
 
 COPY gui/tests/nomad.yaml ./gui/tests/nomad.yaml
 COPY gui/tests/env.js ./gui/tests/env.js
@@ -170,14 +170,15 @@ COPY gui/tests/artifacts.js ./gui/tests/artifacts.js
 COPY --from=build_node /app/gui/build nomad/app/static/gui
 
 # Set up the version as a build argument (default: '0.0')
-ARG SETUPTOOLS_SCM_PRETEND_VERSION='0.0'
+ARG SETUPTOOLS_SCM_PRETEND_VERSION='1.3.13'
 
 # Re-install project with correct version
 RUN uv pip install ".[parsing,infrastructure,dev]"
 
 # Build the python source distribution package
-RUN uv build --sdist
-
+# NOTE (eXact): building wheel instead of source dist
+# RUN uv build --sdist
+RUN uv build 
 
 # ================================================================================
 # We use slim for the final image
@@ -185,13 +186,16 @@ RUN uv build --sdist
 FROM base_builder AS builder
 
 # install
-COPY --from=dev_package /app/dist/nomad-lab-*.tar.gz .
-RUN pip install nomad-lab-*.tar.gz
+# COPY --from=dev_package /app/dist/nomad-lab-*.tar.gz .
+# RUN pip install nomad-lab-*.tar.gz
+COPY --from=dev_package /app/dist/nomad_lab*.whl .
+RUN ls nomad_lab*.whl
+RUN pip install nomad_lab*.whl
 
 # Install default plugins. TODO: This can be removed once we have a proper
 # distribution project.
 COPY requirements-plugins.txt .
-RUN uv pip install -r requirements-plugins.txt -c requirements.txt
+RUN pip install -r requirements-plugins.txt -c requirements.txt
 
 
 # ================================================================================

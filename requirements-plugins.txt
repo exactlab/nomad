@@ -192,6 +192,7 @@ psutil==6.1.0 ; sys_platform == 'win32'  # via diffsims, ipykernel, ipyparallel,
 ptyprocess==0.7.0 ; os_name != 'nt' or (sys_platform != 'emscripten' and sys_platform != 'win32')  # via pexpect, terminado
 pure-eval==0.2.3          # via stack-data
 py-cpuinfo==9.0.0         # via blosc2, tables
+py-spy==0.4.0             # via nomad-lab, -c requirements-dev.txt
 pyasn1==0.6.1             # via pyasn1-modules, rfc3161ng, -c requirements-dev.txt
 pyasn1-modules==0.4.1     # via rfc3161ng, -c requirements-dev.txt
 pybtex==0.24.0            # via pymatgen, -c requirements-dev.txt
@@ -201,6 +202,7 @@ pydantic==1.10.19         # via nomad-lab, nomad-parser-plugins-atomistic, nomad
 pyedr==0.8.0              # via panedr, -c requirements-dev.txt
 pyfai==2024.9.0           # via pyxem
 pygments==2.18.0          # via ipython, jupyter-console, nbconvert, -c requirements-dev.txt
+pyinstrument==5.0.0       # via nomad-lab, -c requirements-dev.txt
 pymatgen==2024.5.1        # via asr, nomad-lab, nomad-porous-materials, -c requirements-dev.txt
 pynxtools==0.7.0          # via pynxtools-apm, pynxtools-ellips, pynxtools-em, pynxtools-mpes, pynxtools-raman, pynxtools-stm, pynxtools-xps, pynxtools-xrd, -r default_plugins.txt
 pynxtools-apm==0.2.1      # via pynxtools
