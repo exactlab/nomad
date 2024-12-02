@@ -225,7 +225,7 @@ RUN mkdir -p /app/.volumes/fs \
  && chown -R nomad:1000 /usr/local/lib/python3.12/site-packages/nomad
 
 # for attaching profiler to running processes
-RUN echo "kernel.yama.ptrace_scope = 0" > /etc/sysctl.d/10-ptrace.conf
+RUN mkdir -p /etc/sysctl.d/ && echo "kernel.yama.ptrace_scope = 0" > /etc/sysctl.d/10-ptrace.conf
 
 USER nomad
 
